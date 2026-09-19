@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% set ch = sheet.char %}
+{% block title %}{{ ch.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+<div class="sheet" id="sheet">
+
+<form class="identity win" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+  <div class="win-title">Character</div>
+  <div class="win-body identity-grid">
+    <label class="name">Name <input name="name" value="{{ ch.name }}" maxlength="120"></label>
+    <label>Player <input name="player" value="{{ ch.player }}" maxlength="120"></label>
+    <label>Race
+      <select name="race">
+        <option value="">None</option>
+        {% for group, opts in race_groups.items() %}
+          {% if opts|length > 1 %}<optgroup label="{{ group }}">{% endif %}
+          {% for o in opts %}<option value="{{ o.value }}" {% if o.race_key == ch.race_key and o.subrace_key == ch.subrace_key %}selected{% endif %}>{{ o.label }}</option>{% endfor %}
+          {% if opts|length > 1 %}</optgroup>{% endif %}
+        {% endfor %}
+      </select>
+    </label>
+    <label>Class
+      <select name="class_key">
+        <option value="">None</option>
+        {% for label, key in class_options %}<option value="{{ key }}" {% if key == ch.class_key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Level <input type="number" name="level" value="{{ ch.level }}" min="1" max="20"></label>
+    {% if sheet.cls and sheet.subclass_level and ch.level >= sheet.subclass_level %}
+    <label>{{ sheet.subclass_title }}
+      <select name="subclass_key" {% if sheet.needs_subclass %}class="attention"{% endif %}>
+        <option value="">Choose</option>
+        {% for label, key in sheet.subclass_options %}<option value="{{ key }}" {% if key == ch.subclass_key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    {% elif sheet.cls and sheet.subclass_level %}
+    <div class="muted small self-end">{{ sheet.subclass_title }} at level {{ sheet.subclass_level }}</div>
+    {% endif %}
+    <label>Background
+      <select name="background_key">
+        <option value="">None</option>
+        {% for b in backgrounds %}<option value="{{ b|ekey }}" {% if (b|ekey) == ch.background_key %}selected{% endif %}>{{ b.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Alignment <input name="alignment" value="{{ ch.alignment }}" maxlength="40"></label>
+    <label>XP <input type="number" name="xp" value="{{ ch.xp }}" min="0"></label>
+  </div>
+</form>
+
+<div class="sheet-grid">
+  <div class="col">
+    <section class="win">
+      <div class="win-title">Abilities</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <div class="abilities">
+          {% for ab in ABILITIES %}
+          <div class="ability">
+            <span class="ability-name">{{ ab|upper }}</span>
+            {% include "partials/mod.html" %}
+            <input type="number" name="score_{{ ab }}" value="{{ sheet.scores[ab] }}" min="1" max="30">
+          </div>
+          {% endfor %}
+        </div>
+      </form>
+    </section>
+
+    {% include "partials/derived.html" %}
+
+    <section class="win">
+      <div class="win-title">Saving throws</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <input type="hidden" name="_lists" value="save_prof">
+        {% include "partials/saves.html" %}
+      </form>
+    </section>
+
+    <section class="win">
+      <div class="win-title">Skills</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <input type="hidden" name="_lists" value="skill_prof,skill_expertise">
+        {% include "partials/skills.html" %}
+      </form>
+    </section>
+
+    <section class="win">
+      <div class="win-title">Proficiencies &amp; languages</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <textarea name="other_profs" rows="4" placeholder="Armour, weapons, tools, languages">{{ ch.other_profs }}</textarea>
+        {% if sheet.cls %}<p class="muted small">{{ sheet.cls.name }}: {{ sheet.cls.startingProficiencies.armor|join(', ') if sheet.cls.startingProficiencies.armor else 'no armour' }}; {{ sheet.cls.startingProficiencies.weapons|join(', ') if sheet.cls.startingProficiencies.weapons else 'no weapons' }}{% if sheet.cls.startingProficiencies.tools %}; {{ sheet.cls.startingProficiencies.tools|join(', ')|inline }}{% endif %}</p>{% endif %}
+        {% if sheet.race and sheet.race.languageProficiencies %}<p class="muted small">{{ sheet.race.name }}: {{ sheet.race.languageProficiencies|prof_list }}</p>{% endif %}
+      </form>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="win">
+      <div class="win-title">Combat</div>
+      <form class="win-body combat-grid" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <input type="hidden" name="_lists" value="inspiration">
+        <label class="stat"><span>AC</span><input type="number" name="ac" value="{{ ch.ac }}" min="0" max="60"></label>
+        <label class="stat"><span>Speed</span><input type="number" name="speed" value="{{ ch.speed }}" min="0" max="999"></label>
+        <label class="stat"><span>Init bonus</span><input type="number" name="initiative_bonus" value="{{ ch.initiative_bonus }}" min="-20" max="20"></label>
+        <label class="stat"><span>Max HP</span><input type="number" name="hp_max" value="{{ ch.hp_max }}" min="1" max="9999"></label>
+        <label class="check"><input type="checkbox" name="inspiration" {% if ch.inspiration %}checked{% endif %}> Inspiration</label>
+      </form>
+      {% include "partials/hp.html" %}
+    </section>
+
+    {% include "partials/conditions.html" %}
+    {% include "partials/attacks.html" %}
+
+    {% if sheet.spellcasting %}
+    <section class="win">
+      <div class="win-title">Spellcasting</div>
+      <div class="win-body">
+        {% include "partials/spellcasting.html" %}
+        {% include "partials/spells.html" %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col">
+    {% include "partials/features.html" %}
+
+    <section class="win">
+      <div class="win-title">Other features &amp; feats</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <textarea name="features_custom" rows="5" placeholder="Feats, boons, anything the books don't fill in">{{ ch.features_custom }}</textarea>
+      </form>
+    </section>
+
+    {% include "partials/inventory.html" %}
+
+    <section class="win">
+      <div class="win-title">Notes</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <textarea name="notes" rows="6" placeholder="Session notes, contacts, loose ends">{{ ch.notes }}</textarea>
+        <textarea name="backstory" rows="6" placeholder="Backstory, personality, ideals, bonds, flaws">{{ ch.backstory }}</textarea>
+      </form>
+    </section>
+
+    {% if is_dm %}
+    <section class="win dm">
+      <div class="win-title">DM notes <span class="muted small">only you see this</span></div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <textarea name="notes_dm" rows="8" placeholder="Secrets, hooks, what they don't know yet">{{ ch.notes_dm }}</textarea>
+      </form>
+      <div class="win-body">
+        <form hx-post="/c/{{ ch.id }}/delete" hx-confirm="Delete {{ ch.name }} for good?" hx-swap="none">
+          <button class="danger">Delete character</button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% set ch = sheet.char %}
+<section class="win" id="attacks">
+  <div class="win-title">Attacks</div>
+  <div class="win-body">
+    <div class="table-rows">
+      {% if ch.attacks %}<div class="trow head"><span>Name</span><span>Hit</span><span>Damage</span><span>Notes</span><span></span></div>{% endif %}
+      {% for a in ch.attacks %}
+      <form class="trow" hx-post="/c/{{ ch.id }}/attacks" hx-trigger="change" hx-swap="none">
+        <input type="hidden" name="op" value="update"><input type="hidden" name="idx" value="{{ loop.index0 }}">
+        <input name="name" value="{{ a.name }}">
+        <input name="bonus" value="{{ a.bonus }}" class="short">
+        <input name="damage" value="{{ a.damage }}">
+        <input name="notes" value="{{ a.notes }}">
+        <button type="button" class="link" hx-post="/c/{{ ch.id }}/attacks" hx-vals='{"op": "remove", "idx": {{ loop.index0 }}}' hx-target="#attacks" hx-swap="outerHTML" title="remove">x</button>
+      </form>
+      {% endfor %}
+      <form class="trow add" hx-post="/c/{{ ch.id }}/attacks" hx-target="#attacks" hx-swap="outerHTML">
+        <input type="hidden" name="op" value="add">
+        <input name="name" placeholder="Weapon - book weapons fill themselves in" required>
+        <input name="bonus" placeholder="+5" class="short">
+        <input name="damage" placeholder="1d8+3 slashing">
+        <input name="notes" placeholder="notes">
+        <button>Add</button>
+      </form>
+    </div>
+  </div>
+</section>

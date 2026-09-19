@@ -1,0 +1,9 @@
+<div class="rows" id="saves" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% for s in sheet.saves %}
+  <label class="row">
+    <input type="checkbox" name="save_prof" value="{{ s.ability }}" {% if s.prof %}checked{% endif %}>
+    <span class="row-name">{{ s.name }}</span>
+    <span class="row-val">{{ s.total|mod }}</span>
+  </label>
+  {% endfor %}
+</div>

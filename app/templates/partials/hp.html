@@ -1,0 +1,39 @@
+{% set ch = sheet.char %}
+<div class="hp" id="hp" hx-target="#hp" hx-swap="outerHTML">
+  <div class="hp-main">
+    <div class="hp-now {% if ch.hp_current == 0 %}down{% elif ch.hp_current * 4 <= ch.hp_max %}low{% endif %}">
+      <span class="hp-big">{{ ch.hp_current }}</span><span class="hp-max">/ {{ ch.hp_max }}</span>
+      {% if ch.hp_temp %}<span class="hp-temp">+{{ ch.hp_temp }} temp</span>{% endif %}
+    </div>
+    <form class="hp-actions" hx-post="/c/{{ ch.id }}/hp">
+      <input type="number" name="amount" min="0" max="999" placeholder="0" inputmode="numeric">
+      <button name="action" value="damage" class="danger">Damage</button>
+      <button name="action" value="heal" class="good">Heal</button>
+      <button name="action" value="temp" class="ghost" title="set temporary HP">Temp</button>
+      <button name="action" value="set" class="ghost" title="set current HP">Set</button>
+    </form>
+  </div>
+  <div class="hp-foot">
+    <form class="inline" hx-post="/c/{{ ch.id }}/hp">
+      <span class="k">Death saves</span>
+      <button name="action" value="death_success" class="ghost">success {{ ch.death_success }}/3</button>
+      <button name="action" value="death_fail" class="ghost">fail {{ ch.death_fail }}/3</button>
+      {% if ch.death_success or ch.death_fail %}<button name="action" value="death_reset" class="link">reset</button>{% endif %}
+    </form>
+    {% if sheet.hit_die %}
+    <form class="inline" hx-post="/c/{{ ch.id }}/hp">
+      <input type="hidden" name="action" value="hit_die">
+      <button name="delta" value="1" class="ghost" title="spend one">spend d{{ sheet.hit_die }} ({{ sheet.hit_dice_left }} left)</button>
+      <button name="delta" value="-1" class="link" title="give one back">undo</button>
+    </form>
+    {% endif %}
+    <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none" hx-confirm="Long rest: full HP, slots back, half your hit dice back?">
+      <input type="hidden" name="kind" value="long">
+      <button class="ghost">Long rest</button>
+    </form>
+    <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none">
+      <input type="hidden" name="kind" value="short">
+      <button class="ghost" title="pact slots back">Short rest</button>
+    </form>
+  </div>
+</div>

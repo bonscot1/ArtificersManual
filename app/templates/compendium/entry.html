@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ e.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<section class="win">
+  <div class="win-title">{{ e.name }} <span class="muted small">{{ title }} &middot; {{ e.source }}{% if e.page %} p.{{ e.page }}{% endif %}</span></div>
+  <div class="win-body entry">
+    {% if e.prerequisite %}<p class="muted"><i>Prerequisite: {{ e.prerequisite|prereq }}</i></p>{% endif %}
+    {{ e.entries|entries }}
+  </div>
+</section>
+{% endblock %}

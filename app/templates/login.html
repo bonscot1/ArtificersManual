@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sign in - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<section class="win">
+  <div class="win-title">Table password</div>
+  <div class="win-body">
+    <form method="post" action="/login" class="stack">
+      <input type="hidden" name="next" value="{{ next }}">
+      <input type="password" name="password" autofocus autocomplete="current-password" placeholder="password">
+      {% if error %}<p class="err">{{ error }}</p>{% endif %}
+      <button type="submit">Enter</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% if not sheets %}
+<p class="muted">No characters yet. <a href="/new">Make the first one.</a></p>
+{% endif %}
+<div class="cards">
+{% for s in sheets %}
+  {% set ch = s.char %}
+  <a class="card" href="/c/{{ ch.id }}">
+    <div class="card-head">
+      <span class="card-name">{{ ch.name }}</span>
+      {% if ch.player %}<span class="muted">{{ ch.player }}</span>{% endif %}
+    </div>
+    <div class="card-sub">
+      {{ s.race.name if s.race else 'No race' }} &middot;
+      {{ s.cls.name if s.cls else 'No class' }}{% if s.sub %} ({{ s.sub.name }}){% endif %} {{ ch.level }}
+    </div>
+    {% set pct = (100 * ch.hp_current / ch.hp_max) if ch.hp_max else 0 %}
+    <div class="hpbar" title="{{ ch.hp_current }} / {{ ch.hp_max }}">
+      <div class="hpbar-fill {% if pct <= 25 %}low{% elif pct <= 50 %}mid{% endif %}" style="width: {{ pct|round|int }}%"></div>
+      <span class="hpbar-text">HP {{ ch.hp_current }}/{{ ch.hp_max }}{% if ch.hp_temp %} +{{ ch.hp_temp }}{% endif %}</span>
+    </div>
+    <div class="card-stats">
+      <span>AC {{ ch.ac }}</span>
+      <span>PP {{ s.passive_perception }}</span>
+      <span>Init {{ s.initiative|mod }}</span>
+      {% if s.spellcasting and s.spellcasting.dc %}<span>DC {{ s.spellcasting.dc }}</span>{% endif %}
+    </div>
+    {% if ch.conditions %}<div class="chips">{% for c in ch.conditions %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
+    {% if ch.hp_current == 0 %}<div class="chips"><span class="chip danger">Down - saves {{ ch.death_success }} / {{ ch.death_fail }}</span></div>{% endif %}
+    {% if is_dm and ch.notes_dm %}<div class="dm-snippet">{{ ch.notes_dm[:140] }}{% if ch.notes_dm|length > 140 %}&hellip;{% endif %}</div>{% endif %}
+  </a>
+{% endfor %}
+</div>

@@ -1,0 +1,39 @@
+{% set ch = sheet.char %}
+<section class="win" id="features">
+  <div class="win-title">Features &amp; traits</div>
+  <div class="win-body">
+    {% if sheet.race %}
+    <div class="feat-group">
+      <div class="feat-group-head">{{ sheet.race.name }} <span class="muted small">{{ sheet.race_size }} &middot; {{ sheet.race_speed }} &middot; {{ sheet.race_ability }}</span></div>
+      {% for t in sheet.race_traits %}
+      <details class="feat"><summary>{{ t.name }}</summary><div class="feat-body">{{ t.entries|entries }}</div></details>
+      {% endfor %}
+      {% if sheet.race_fluff %}
+      <details class="feat muted"><summary>Age, size, languages</summary><div class="feat-body">{% for t in sheet.race_fluff %}{{ t|entries }}{% endfor %}</div></details>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if sheet.cls %}
+    <div class="feat-group">
+      <div class="feat-group-head">{{ sheet.cls.name }}{% if sheet.sub %} &middot; {{ sheet.sub.name }}{% endif %} <span class="muted small">d{{ sheet.hit_die }} &middot; saves {{ sheet.cls.proficiency|join(', ')|upper }}</span></div>
+      {% if sheet.needs_subclass %}<p class="attention-text">Pick your {{ sheet.subclass_title|lower }} at the top of the sheet.</p>{% endif %}
+      {% for f in sheet.features %}
+      <details class="feat {% if f.kind == 'subclass' %}sub{% endif %}" {% if f.level == ch.level %}open{% endif %}>
+        <summary>{{ f.name }} <span class="muted small">lvl {{ f.level }}{% if f.source != 'PHB' %} &middot; {{ f.source }}{% endif %}</span></summary>
+        <div class="feat-body">{{ f.entries|entries }}</div>
+      </details>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if sheet.bg %}
+    <div class="feat-group">
+      <div class="feat-group-head">{{ sheet.bg.name }} <span class="muted small">background</span></div>
+      {% if sheet.bg_feature %}
+      <details class="feat"><summary>{{ sheet.bg_feature.name }}</summary><div class="feat-body">{{ sheet.bg_feature.entries|entries }}</div></details>
+      {% endif %}
+      <p class="small"><a href="{{ entity_url('background', sheet.bg) }}">full background</a></p>
+    </div>
+    {% endif %}
+    {% if not sheet.race and not sheet.cls %}<p class="muted">Pick a race and class at the top and their traits and features appear here.</p>{% endif %}
+  </div>
+</section>

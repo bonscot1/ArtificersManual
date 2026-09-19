@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Items - Artificer's Manual{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Items</h1><span class="muted">{{ results|length }}</span></div>
+<form method="get" action="/compendium/items" class="searchbar">
+  <input type="search" name="q" value="{{ q }}" placeholder="Name">
+  <select name="kind"><option value="">Everything</option><option value="weapon" {% if kind == 'weapon' %}selected{% endif %}>Weapons</option><option value="armor" {% if kind == 'armor' %}selected{% endif %}>Armour</option></select>
+  <button>Filter</button>
+</form>
+<table class="list">
+  <thead><tr><th>Item</th><th>Details</th><th>Cost</th><th>Weight</th></tr></thead>
+  <tbody>
+  {% for it in results %}
+  <tr><td><a href="{{ entity_url('item', it) }}">{{ it.name }}</a></td><td>{{ it|weapon_summary }}{{ it|armor_summary }}</td><td>{% if it.value %}{{ (it.value / 100)|round(2) }} gp{% endif %}</td><td>{% if it.weight %}{{ it.weight }} lb.{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

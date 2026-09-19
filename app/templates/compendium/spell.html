@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ sp.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<section class="win">
+  <div class="win-title">{{ sp.name }} <span class="muted small">{{ sp.source }} p.{{ sp.page }}</span></div>
+  <div class="win-body entry">
+    <p class="muted"><i>{{ sp|spell_level_label }}{% for f in sp|spell_flags %} ({{ f }}){% endfor %}</i></p>
+    <dl class="facts">
+      <dt>Casting time</dt><dd>{{ sp|spell_time }}</dd>
+      <dt>Range</dt><dd>{{ sp|spell_range }}</dd>
+      <dt>Components</dt><dd>{{ sp|spell_components }}</dd>
+      <dt>Duration</dt><dd>{{ sp|spell_duration }}</dd>
+    </dl>
+    {{ sp.entries|entries }}
+    {% if sp.entriesHigherLevel %}{{ sp.entriesHigherLevel|entries }}{% endif %}
+    <p class="muted small">Classes: {{ casters|join(', ') if casters else 'none in your books' }}{% if sub_casters %}. Also: {{ sub_casters|join(', ') }}{% endif %}</p>
+  </div>
+</section>
+<p><a href="/compendium/spells">All spells</a></p>
+{% endblock %}

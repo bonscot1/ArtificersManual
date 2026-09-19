@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ it.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<section class="win">
+  <div class="win-title">{{ it.name }} <span class="muted small">{{ it.source }}{% if it.page %} p.{{ it.page }}{% endif %}</span></div>
+  <div class="win-body entry">
+    <dl class="facts">
+      {% if it|weapon_summary %}<dt>Weapon</dt><dd>{{ it|weapon_summary }}</dd>{% endif %}
+      {% if it|armor_summary %}<dt>Armour</dt><dd>{{ it|armor_summary }}</dd>{% endif %}
+      {% if it.value %}<dt>Cost</dt><dd>{{ (it.value / 100)|round(2) }} gp</dd>{% endif %}
+      {% if it.weight %}<dt>Weight</dt><dd>{{ it.weight }} lb.</dd>{% endif %}
+      {% if it.rarity and it.rarity != 'none' %}<dt>Rarity</dt><dd>{{ it.rarity }}{% if it.reqAttune %} (requires attunement){% endif %}</dd>{% endif %}
+    </dl>
+    {{ it.entries|entries }}
+  </div>
+</section>
+{% endblock %}

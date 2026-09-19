@@ -1,0 +1,13 @@
+<div class="rows" id="skills" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <div class="row head"><span class="checks small muted">prof&nbsp;exp</span><span class="row-name"></span><span></span></div>
+  {% for s in sheet.skills %}
+  <div class="row">
+    <span class="checks">
+      <input type="checkbox" name="skill_prof" value="{{ s.name }}" {% if s.prof %}checked{% endif %} title="proficient">
+      <input type="checkbox" name="skill_expertise" value="{{ s.name }}" {% if s.expertise %}checked{% endif %} title="expertise">
+    </span>
+    <span class="row-name">{{ s.name }} <small class="muted">{{ s.ability }}</small></span>
+    <span class="row-val">{{ s.total|mod }}</span>
+  </div>
+  {% endfor %}
+</div>

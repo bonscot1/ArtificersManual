@@ -1,0 +1,30 @@
+{% set ch = sheet.char %}
+<section class="win" id="inventory">
+  <div class="win-title">Equipment</div>
+  <div class="win-body">
+    <form class="coins" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+      <input type="hidden" name="_lists" value="currency">
+      {% for k in ['cp', 'sp', 'ep', 'gp', 'pp'] %}
+      <label><span>{{ k }}</span><input type="number" name="cur_{{ k }}" value="{{ sheet.currency[k] }}" min="0"></label>
+      {% endfor %}
+    </form>
+    <div class="table-rows">
+      {% for it in ch.inventory %}
+      <form class="trow inv" hx-post="/c/{{ ch.id }}/inventory" hx-trigger="change" hx-swap="none">
+        <input type="hidden" name="op" value="update"><input type="hidden" name="idx" value="{{ loop.index0 }}">
+        <input name="qty" value="{{ it.qty }}" class="short">
+        <input name="name" value="{{ it.name }}">
+        <input name="notes" value="{{ it.notes }}">
+        <button type="button" class="link" hx-post="/c/{{ ch.id }}/inventory" hx-vals='{"op": "remove", "idx": {{ loop.index0 }}}' hx-target="#inventory" hx-swap="outerHTML" title="remove">x</button>
+      </form>
+      {% endfor %}
+      <form class="trow inv add" hx-post="/c/{{ ch.id }}/inventory" hx-target="#inventory" hx-swap="outerHTML">
+        <input type="hidden" name="op" value="add">
+        <input name="qty" placeholder="1" class="short">
+        <input name="name" placeholder="Item" required>
+        <input name="notes" placeholder="notes">
+        <button>Add</button>
+      </form>
+    </div>
+  </div>
+</section>

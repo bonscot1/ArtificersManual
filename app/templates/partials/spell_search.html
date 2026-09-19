@@ -1,0 +1,12 @@
+{% if not results %}<p class="muted small">Nothing matches.</p>{% endif %}
+<ul class="results">
+  {% for sp in results %}
+  {% set k = sp|ekey %}
+  <li>
+    <button class="link add" hx-post="/c/{{ char.id }}/spells" hx-vals='{"op": "add", "key": {{ k|tojson }}}' hx-target="#spells" hx-swap="outerHTML" {% if k in have %}disabled{% endif %}>{{ 'added' if k in have else 'add' }}</button>
+    <span class="spell-name">{{ sp.name }}</span>
+    <span class="muted small">{{ sp|spell_level_label }} &middot; {{ sp|spell_time }} &middot; {{ sp|spell_range }}</span>
+    <a class="small" href="{{ entity_url('spell', sp) }}" target="_blank">details</a>
+  </li>
+  {% endfor %}
+</ul>

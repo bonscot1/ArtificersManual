@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Artificer's Manual{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body hx-boost="false">
+<header class="topbar">
+  <a class="brand" href="/">Artificer's Manual</a>
+  <nav>
+    <a href="/" {% if request.url.path == '/' %}class="on"{% endif %}>Party</a>
+    <a href="/new" {% if request.url.path == '/new' %}class="on"{% endif %}>New character</a>
+    <a href="/compendium" {% if request.url.path.startswith('/compendium') %}class="on"{% endif %}>Compendium</a>
+  </nav>
+  <div class="who">
+    {% if is_dm %}<span class="pill pill-dm">DM</span>{% elif role %}<span class="pill">player</span>{% endif %}
+    {% if settings.table_password or settings.dm_password %}
+    <form method="post" action="/logout" class="inline"><button class="link">log out</button></form>
+    {% endif %}
+  </div>
+</header>
+<main class="{% block main_class %}{% endblock %}">
+{% block content %}{% endblock %}
+</main>
+<div id="toast" class="toast" hidden></div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var toast = document.getElementById("toast"), timer;
+    document.body.addEventListener("toast", function (e) {
+      toast.textContent = (e.detail && e.detail.value) || "Saved";
+      toast.hidden = false;
+      clearTimeout(timer);
+      timer = setTimeout(function () { toast.hidden = true; }, 1400);
+    });
+    document.body.addEventListener("htmx:responseError", function (e) {
+      toast.textContent = "Not saved (" + e.detail.xhr.status + ")";
+      toast.hidden = false;
+      clearTimeout(timer);
+      timer = setTimeout(function () { toast.hidden = true; }, 2500);
+    });
+  });
+</script>
+</body>
+</html>

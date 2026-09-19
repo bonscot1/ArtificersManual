@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Compendium - Artificer's Manual{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Compendium</h1><span class="muted">{{ sources|join(', ') }}</span></div>
+<form method="get" action="/compendium" class="searchbar">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search everything" autofocus>
+  <button>Search</button>
+</form>
+{% if q %}
+<ul class="results">
+  {% for kind, e in hits %}
+  <li><span class="chip">{{ kind|replace('optionalfeature', 'option') }}</span> <a href="{{ entity_url(kind, e) }}">{{ e.name }}</a> <span class="muted small">{{ e.source }}</span></li>
+  {% else %}
+  <li class="muted">Nothing called that in your enabled books.</li>
+  {% endfor %}
+</ul>
+{% endif %}
+<div class="cards">
+  <a class="card" href="/compendium/spells"><span class="card-name">Spells</span><span class="muted">{{ counts.spell }}</span></a>
+  <a class="card" href="/compendium/classes"><span class="card-name">Classes</span><span class="muted">{{ counts.class }}</span></a>
+  <a class="card" href="/compendium/races"><span class="card-name">Races</span><span class="muted">{{ counts.race }}</span></a>
+  <a class="card" href="/compendium/backgrounds"><span class="card-name">Backgrounds</span><span class="muted">{{ counts.background }}</span></a>
+  <a class="card" href="/compendium/feats"><span class="card-name">Feats</span><span class="muted">{{ counts.feat }}</span></a>
+  <a class="card" href="/compendium/items"><span class="card-name">Items</span><span class="muted">{{ counts.item }}</span></a>
+  <a class="card" href="/compendium/conditions"><span class="card-name">Conditions</span><span class="muted">{{ counts.condition }}</span></a>
+</div>
+{% endblock %}

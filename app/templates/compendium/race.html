@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ race.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ race.name }}</h1><span class="muted">{{ race.source }} p.{{ race.page }}</span></div>
+{% if variants|length > 1 %}
+<div class="chips">
+  {% for o in variants %}<a class="chip {% if o.subrace_key == sub %}on{% endif %}" href="/compendium/races/{{ key|urlencode }}{% if o.subrace_key %}?sub={{ o.subrace_key|urlencode }}{% endif %}">{{ o.label }}</a>{% endfor %}
+</div>
+{% endif %}
+<section class="win">
+  <div class="win-title">Traits</div>
+  <div class="win-body entry">
+    <dl class="facts">
+      <dt>Ability scores</dt><dd>{{ race|race_ability }}</dd>
+      <dt>Size</dt><dd>{{ race|race_size }}</dd>
+      <dt>Speed</dt><dd>{{ race|race_speed_text }}</dd>
+      {% if race.darkvision %}<dt>Darkvision</dt><dd>{{ race.darkvision }} ft.</dd>{% endif %}
+      {% if race.languageProficiencies %}<dt>Languages</dt><dd>{{ race.languageProficiencies|prof_list }}</dd>{% endif %}
+      {% if race.skillProficiencies %}<dt>Skills</dt><dd>{{ race.skillProficiencies|prof_list }}</dd>{% endif %}
+    </dl>
+    {{ race.entries|entries }}
+  </div>
+</section>
+{% endblock %}

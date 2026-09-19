@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Conditions - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<h1>Conditions</h1>
+{% for c in conditions %}
+<details class="feat" id="{{ c.name|lower }}"><summary>{{ c.name }}</summary><div class="feat-body">{{ c.entries|entries }}</div></details>
+{% endfor %}
+{% endblock %}

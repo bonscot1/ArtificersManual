@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Spells - Artificer's Manual{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Spells</h1><span class="muted">{{ results|length }}</span></div>
+<form method="get" action="/compendium/spells" class="searchbar">
+  <input type="search" name="q" value="{{ q }}" placeholder="Name">
+  <select name="level"><option value="">Any level</option><option value="0" {% if level == '0' %}selected{% endif %}>Cantrip</option>{% for l in range(1, 10) %}<option value="{{ l }}" {% if level == l|string %}selected{% endif %}>{{ l|ordinal }}</option>{% endfor %}</select>
+  <select name="cls"><option value="">Any class</option>{% for label, key in class_options %}<option value="{{ key }}" {% if cls == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <select name="school"><option value="">Any school</option>{% for code, name in SCHOOLS.items() %}<option value="{{ code }}" {% if school == code %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+  <button>Filter</button>
+</form>
+<table class="list">
+  <thead><tr><th>Spell</th><th>Level</th><th>Time</th><th>Range</th><th>Duration</th><th></th></tr></thead>
+  <tbody>
+  {% for sp in results %}
+  <tr><td><a href="{{ entity_url('spell', sp) }}">{{ sp.name }}</a></td><td>{{ sp|spell_level_label }}</td><td>{{ sp|spell_time }}</td><td>{{ sp|spell_range }}</td><td>{{ sp|spell_duration }}</td><td class="muted small">{{ sp|spell_flags|join(', ') }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

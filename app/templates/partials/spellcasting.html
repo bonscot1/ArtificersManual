@@ -1,0 +1,16 @@
+{% set sc = sheet.spellcasting %}
+<div id="spellcasting" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% if sc %}
+  <div class="strip">
+    {% if sc.ability %}
+    <div><span class="k">Ability</span><span class="v">{{ sc.ability|upper }}</span></div>
+    <div><span class="k">Save DC</span><span class="v">{{ sc.dc }}</span></div>
+    <div><span class="k">Attack</span><span class="v">{{ sc.attack|mod }}</span></div>
+    {% endif %}
+    {% if sc.cantrips_known is not none %}<div><span class="k">Cantrips</span><span class="v">{{ sc.cantrips_known }}</span></div>{% endif %}
+    {% if sc.spells_known is not none %}<div><span class="k">Known</span><span class="v">{{ sc.spells_known }}</span></div>{% endif %}
+    {% if sc.prepared_max is not none %}<div><span class="k">Prepared</span><span class="v">{{ sheet.prepared_count }}/{{ sc.prepared_max }}</span></div>{% endif %}
+  </div>
+  {% include "partials/slots.html" %}
+  {% endif %}
+</div>

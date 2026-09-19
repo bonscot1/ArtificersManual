@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Races - Artificer's Manual{% endblock %}
+{% block content %}
+<h1>Races</h1>
+<div class="cards">
+  {% for o in options %}
+  <a class="card" href="/compendium/races/{{ o.race_key|urlencode }}{% if o.subrace_key %}?sub={{ o.subrace_key|urlencode }}{% endif %}"><span class="card-name">{{ o.label }}</span></a>
+  {% endfor %}
+</div>
+{% endblock %}

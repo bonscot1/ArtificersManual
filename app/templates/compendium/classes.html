@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Classes - Artificer's Manual{% endblock %}
+{% block content %}
+<h1>Classes</h1>
+<div class="cards">
+  {% for c in classes %}
+  <a class="card" href="{{ entity_url('class', c) }}"><span class="card-name">{{ c.name }}</span><span class="muted">d{{ c.hd.faces }} &middot; {{ c.proficiency|join(', ')|upper }} saves{% if c.spellcastingAbility %} &middot; {{ c.spellcastingAbility|upper }} caster{% endif %}{% if c.source != 'PHB' %} &middot; {{ c.source }}{% endif %}</span></a>
+  {% endfor %}
+</div>
+{% endblock %}

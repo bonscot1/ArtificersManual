@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}New character - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<h1>New character</h1>
+<form method="post" action="/new" class="stack">
+  <section class="win">
+    <div class="win-title">Who</div>
+    <div class="win-body grid2">
+      <label>Character name <input name="name" required maxlength="120" autofocus></label>
+      <label>Player <input name="player" maxlength="120"></label>
+      <label>Race
+        <select name="race" required>
+          <option value="">Choose</option>
+          {% for group, opts in race_groups.items() %}
+            {% if opts|length > 1 %}<optgroup label="{{ group }}">{% endif %}
+            {% for o in opts %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}
+            {% if opts|length > 1 %}</optgroup>{% endif %}
+          {% endfor %}
+        </select>
+      </label>
+      <label>Class
+        <select name="class_key" required>
+          <option value="">Choose</option>
+          {% for label, key in class_options %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Level <input type="number" name="level" value="1" min="1" max="20"></label>
+      <label>Background
+        <select name="background_key">
+          <option value="">None</option>
+          {% for b in backgrounds %}<option value="{{ b|ekey }}">{{ b.name }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Alignment <input name="alignment" maxlength="40" placeholder="e.g. Neutral Good"></label>
+    </div>
+  </section>
+  <section class="win">
+    <div class="win-title">Ability scores</div>
+    <div class="win-body">
+      <div class="scores-row">
+        {% for ab in ABILITIES %}
+        <label class="score-in"><span>{{ ab|upper }}</span><input type="number" name="score_{{ ab }}" value="10" min="1" max="30"></label>
+        {% endfor %}
+      </div>
+      <p class="muted small">Standard array is 15, 14, 13, 12, 10, 8. Add your racial bonuses yourself; the sheet shows what the race grants.</p>
+    </div>
+  </section>
+  <p class="muted small">HP, AC, speed and saving throws are filled in from the class and race. Everything can be edited on the sheet.</p>
+  <button type="submit" class="primary">Create</button>
+</form>
+{% endblock %}

@@ -1,0 +1,6 @@
+<div class="strip" id="derived" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <div><span class="k">Proficiency</span><span class="v">+{{ sheet.prof }}</span></div>
+  <div><span class="k">Initiative</span><span class="v">{{ sheet.initiative|mod }}</span></div>
+  <div><span class="k">Passive Perc.</span><span class="v">{{ sheet.passive_perception }}</span></div>
+  {% if sheet.hit_die %}<div><span class="k">Hit dice</span><span class="v">{{ sheet.hit_dice_left }}/{{ sheet.char.level }} d{{ sheet.hit_die }}</span></div>{% endif %}
+</div>

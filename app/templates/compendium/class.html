@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ cls.name }} - Artificer's Manual{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ cls.name }}{% if sub_entry %} <span class="muted">&middot; {{ sub_entry.name }}</span>{% endif %}</h1><span class="muted">{{ cls.source }} p.{{ cls.page }}</span></div>
+<div class="two-col">
+  <div>
+    <section class="win">
+      <div class="win-title">At a glance</div>
+      <div class="win-body">
+        <dl class="facts">
+          <dt>Hit die</dt><dd>d{{ cls.hd.faces }}</dd>
+          <dt>Saving throws</dt><dd>{{ cls.proficiency|join(', ')|upper }}</dd>
+          <dt>Armour</dt><dd>{{ cls.startingProficiencies.armor|join(', ') if cls.startingProficiencies.armor else 'none' }}</dd>
+          <dt>Weapons</dt><dd>{{ cls.startingProficiencies.weapons|join(', ')|inline if cls.startingProficiencies.weapons else 'none' }}</dd>
+          {% if cls.startingProficiencies.tools %}<dt>Tools</dt><dd>{{ cls.startingProficiencies.tools|join(', ')|inline }}</dd>{% endif %}
+          <dt>Skills</dt><dd>{{ cls.startingProficiencies.skills|prof_list }}</dd>
+          {% if cls.spellcastingAbility %}<dt>Spellcasting</dt><dd>{{ cls.spellcastingAbility|upper }}</dd>{% endif %}
+        </dl>
+        {% if cls.startingEquipment and cls.startingEquipment.default %}
+        <b class="ent-name">Starting equipment</b>
+        <ul class="ent-list">{% for line in cls.startingEquipment.default %}<li>{{ line|inline }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </section>
+    <section class="win">
+      <div class="win-title">{{ cls.subclassTitle or 'Subclasses' }}</div>
+      <div class="win-body chips">
+        <a class="chip {% if not sub %}on{% endif %}" href="/compendium/classes/{{ key|urlencode }}">base class</a>
+        {% for label, k in subs %}<a class="chip {% if k == sub %}on{% endif %}" href="/compendium/classes/{{ key|urlencode }}?sub={{ k|urlencode }}">{{ label }}</a>{% endfor %}
+      </div>
+    </section>
+    {% if slots[0] or slots[19] or pact[19] %}
+    <section class="win">
+      <div class="win-title">Spell slots</div>
+      <div class="win-body">
+        <table class="list compact">
+          <thead><tr><th>Lvl</th>{% if pact[19] %}<th>Pact slots</th><th>Slot level</th>{% else %}{% for i in range(1, 10) %}<th>{{ i|ordinal }}</th>{% endfor %}{% endif %}</tr></thead>
+          <tbody>
+          {% for lvl in range(1, 21) %}
+          <tr><td>{{ lvl }}</td>
+            {% if pact[19] %}<td>{{ pact[lvl - 1][0] }}</td><td>{{ pact[lvl - 1][1]|ordinal }}</td>
+            {% else %}{% for n in slots[lvl - 1] %}<td>{{ n or '' }}</td>{% endfor %}{% endif %}
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+  <div>
+    <section class="win">
+      <div class="win-title">Features by level</div>
+      <div class="win-body">
+        {% for lvl, feats in by_level.items() %}
+        <div class="feat-group-head">Level {{ lvl }}</div>
+        {% for f in feats %}
+        <details class="feat {% if f.kind == 'subclass' %}sub{% endif %}"><summary>{{ f.name }}{% if f.source != 'PHB' %} <span class="muted small">{{ f.source }}</span>{% endif %}</summary><div class="feat-body">{{ f.entries|entries }}</div></details>
+        {% endfor %}
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
