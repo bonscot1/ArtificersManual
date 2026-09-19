@@ -43,14 +43,16 @@ def _sign(secret: bytes, payload: str) -> str:
 
 
 # ------------------------------------------------------------------ roles
-def token_for(role: str, secret: bytes) -> str:
-    return f"{role}.{_sign(secret, 'role:' + role)}"
+def token_for(role: str, secret: bytes, settings: Settings) -> str:
+    """Signed over the current password too, so changing it signs everyone with that role out."""
+    password = settings.dm_password if role == "dm" else settings.table_password
+    return f"{role}.{_sign(secret, f'role:{role}:{password}')}"
 
 
-def role_from_cookie(request: Request, secret: bytes) -> str | None:
+def role_from_cookie(request: Request, secret: bytes, settings: Settings) -> str | None:
     raw = request.cookies.get(COOKIE, "")
     role, _, sig = raw.partition(".")
-    if role in ("player", "dm") and hmac.compare_digest(token_for(role, secret), f"{role}.{sig}"):
+    if role in ("player", "dm") and hmac.compare_digest(token_for(role, secret, settings), f"{role}.{sig}"):
         return role
     return None
 
@@ -64,7 +66,7 @@ def _is_local(request: Request) -> bool:
 
 def role_for(request: Request, settings: Settings, secret: bytes) -> str | None:
     """The effective role, or None when a sign-in is required first."""
-    role = role_from_cookie(request, secret)
+    role = role_from_cookie(request, secret, settings)
     if role:
         return role
     if not settings.dm_password and _is_local(request):

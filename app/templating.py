@@ -52,7 +52,7 @@ def page(request: Request, name: str, **ctx):
     from . import auth
     ctx.setdefault("role", getattr(request.state, "role", None))
     ctx["is_dm"] = ctx["role"] == "dm"
-    ctx["signed_in"] = auth.role_from_cookie(request, app.state.secret) is not None
+    ctx["signed_in"] = auth.role_from_cookie(request, app.state.secret, app.state.settings) is not None
     ctx["unlocked"] = getattr(request.state, "unlocked", set())
     ctx["settings"] = app.state.settings
     ctx["sources"] = sorted(app.state.compendium.sources)

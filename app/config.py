@@ -29,10 +29,30 @@ class Settings:
     data_dir: Path = BASE_DIR / "data" / "5etools"
     db_path: Path = BASE_DIR / "data" / "manual.db"
     books_dir: Path = BASE_DIR.parent   # where the PDFs live (E:\DnD); served read-only at /books
+    source_file: Path | None = None     # the settings.json these came from, if any
+    loaded_mtime: float = 0.0
 
     @property
     def db_url(self) -> str:
         return f"sqlite:///{self.db_path.as_posix()}"
+
+    def refresh(self) -> bool:
+        """Re-read passwords/host/port when settings.json changed on disk. Books need a restart."""
+        if not self.source_file or not self.source_file.exists():
+            return False
+        mtime = self.source_file.stat().st_mtime
+        if mtime == self.loaded_mtime:
+            return False
+        try:
+            fresh = load_settings(self.source_file)
+        except (OSError, ValueError):
+            return False        # half-saved or invalid JSON: keep what we have
+        self.table_password, self.dm_password = fresh.table_password, fresh.dm_password
+        self.host, self.port = fresh.host, fresh.port
+        self.loaded_mtime = mtime
+        if fresh.sources != self.sources:
+            print("settings.json: `sources` changed - restart the server to load those books")
+        return True
 
 
 def load_settings(path: Path | None = None) -> Settings:
@@ -40,6 +60,7 @@ def load_settings(path: Path | None = None) -> Settings:
     path = path or DEFAULT_SETTINGS_FILE
     if path.exists():
         raw = json.loads(path.read_text(encoding="utf-8"))
+        s.source_file, s.loaded_mtime = path, path.stat().st_mtime
         if "sources" in raw:
             s.sources = [str(x).strip() for x in raw["sources"] if str(x).strip()]
         s.table_password = str(raw.get("table_password", s.table_password))

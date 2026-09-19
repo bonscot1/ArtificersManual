@@ -39,6 +39,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.middleware("http")
     async def gate(request: Request, call_next):
         path = request.url.path
+        settings.refresh()          # a saved settings.json applies straight away
         request.state.role = auth.role_for(request, settings, secret)
         request.state.unlocked = auth.unlocked_from_cookie(request, secret)
         if request.state.role is None and not path.startswith(_OPEN_PATHS):
@@ -89,7 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return page(request, "login.html", error="That's not it.", next=next)
         target = next if next.startswith("/") and not next.startswith("//") else "/"
         resp = RedirectResponse(target, status_code=303)
-        resp.set_cookie(auth.COOKIE, auth.token_for(role, secret), httponly=True, samesite="lax",
+        resp.set_cookie(auth.COOKIE, auth.token_for(role, secret, settings), httponly=True, samesite="lax",
                         max_age=60 * 60 * 24 * 90)
         return resp
 

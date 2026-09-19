@@ -38,3 +38,22 @@ def test_proxied_request_is_not_local(tmp_path):
     c = TestClient(create_app(make_settings(tmp_path)))
     r = c.get("/", headers={"cf-connecting-ip": "203.0.113.9"})
     assert r.status_code == 200 and "pill-dm" not in r.text
+
+
+def test_settings_file_edits_apply_without_a_restart(tmp_path):
+    import json, os, time
+    from app.config import load_settings
+    cfg = tmp_path / "settings.json"
+    cfg.write_text(json.dumps({"dm_password": "old"}), encoding="utf-8")
+    settings = load_settings(cfg)
+    settings.db_path, settings.data_dir = tmp_path / "t.db", make_settings(tmp_path).data_dir
+    c = TestClient(create_app(settings))
+    assert c.post("/login", data={"password": "old"}, follow_redirects=False).status_code == 303
+    assert "pill-dm" in c.get("/").text
+
+    cfg.write_text(json.dumps({"dm_password": "new"}), encoding="utf-8")
+    os.utime(cfg, (time.time() + 5, time.time() + 5))       # make sure the mtime moves
+    assert "pill-dm" not in c.get("/").text                 # the old DM cookie no longer counts
+    assert c.post("/login", data={"password": "old"}).status_code == 200      # rejected: form again
+    assert c.post("/login", data={"password": "new"}, follow_redirects=False).status_code == 303
+    assert "pill-dm" in c.get("/").text
