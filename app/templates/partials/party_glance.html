@@ -1,0 +1,26 @@
+{% if not sheets %}<p class="muted small">Nobody else in the party yet.</p>{% endif %}
+{% for s in sheets %}
+{% set ch = s.char %}
+<div class="glance" style="{{ s.theme_style }}">
+  <div class="glance-head">
+    {% if ch.token or ch.portrait %}<img class="token-img" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}
+    <span class="glance-name">{{ ch.name }}</span>
+    {% if is_dm %}<span class="muted small">{{ ch.hp_current }}/{{ ch.hp_max }}{% if ch.hp_temp %} +{{ ch.hp_temp }}{% endif %} &middot; AC {{ ch.ac }}</span>{% endif %}
+  </div>
+  <div class="seen">
+    <span class="seen-dot" style="background: {{ s.seen.colour }}"></span>
+    <span style="color: {{ s.seen.colour }}">{{ s.seen.health|capitalize }}</span>
+    {% for look in s.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
+    {% if is_dm and ch.concentration %}<span class="muted small">concentrating on {{ ch.concentration }}</span>{% endif %}
+  </div>
+  {% for c in s.companions if c.summoned %}
+  <div class="seen small">
+    <span class="seen-dot" style="background: {{ c.seen.colour }}"></span>
+    <span class="muted">{{ ch.name.split(' ')[0] }}'s {{ c.name }}</span>
+    {% if is_dm %}<span class="muted">{{ c.hp_current }}/{{ c.hp_max }}</span>{% endif %}
+    <span style="color: {{ c.seen.colour }}">{{ c.seen.health }}</span>
+    {% for look in c.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}

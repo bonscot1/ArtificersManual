@@ -334,3 +334,24 @@ details.all-spells > summary { cursor: pointer; color: var(--ink-2); }
 .pane > .win, .pane > section.win { margin-bottom: 0; }
 .panes.mode-all .pane.on { margin-bottom: .8rem; }
 @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
+
+/* ---- what the others can see */
+.seen { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-size: .9rem; }
+.seen.small { font-size: .8rem; }
+.seen-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; flex: none; box-shadow: 0 0 5px currentColor; }
+.seen-look { color: var(--amber); }
+.seen-look::before { content: "\00b7 "; color: var(--muted); }
+.glance { border-left: 3px solid var(--red); background: var(--bg-3); border-radius: var(--radius); padding: .4rem .6rem; margin-bottom: .4rem; }
+.glance-head { display: flex; align-items: center; gap: .4rem; margin-bottom: .15rem; }
+.glance-head .token-img { width: 28px; height: 28px; margin: 0; }
+.glance-name { color: var(--red-2); font-weight: 600; }
+.companion { border-top: 1px solid var(--line); padding: .5rem 0; }
+.companion:first-child { border-top: 0; padding-top: 0; }
+.companion.away { opacity: .6; }
+.companion-head { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.companion-hp { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .25rem 0; }
+.hp-big.small { font-size: 1.4rem; }
+.hp-big.small.low { color: var(--amber); }
+.hp-big.small.down { color: var(--red-2); }
+.companion-hp .hp-actions input { width: 3.6rem; }
+.companion-edit { grid-template-columns: 1.4fr 1.6fr .5fr .5fr 2fr auto; margin-top: .3rem; }

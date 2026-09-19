@@ -43,7 +43,19 @@ for ritual spells), spends it, and puts concentration spells in the HUD with an 
 The full spell list sits under "All spells".
 
 Some things are the DM's to give, not the player's: inspiration (players can only spend it),
-conditions, XP and max hit points. The DM gets the extra controls on the same play view.
+conditions, XP and max hit points. The DM gets the extra controls on the same play view, plus
+the DM notes on each character.
+
+**What the others see.** Players never see each other's numbers. On the party page and in the
+"The party" pane of the play view (refreshes every few seconds), everyone else is described the
+way you'd see them across the room: health in ten steps from "looks unhurt" to "is struggling
+to stay conscious" and "is down and not moving", coloured green to red, and conditions as what
+they look like - "is on the ground", "looks dazed", "looks sickly". The DM sees the phrases and
+the numbers. Your own card keeps its numbers.
+
+**Companions** - familiars, steel defenders, homunculi - live on the sheet (name, kind, HP,
+AC, notes) and on the Combat screen: summon or dismiss, damage and heal. While summoned they
+appear in the party's view with the same phrases ("Iron's Homunculus is lightly wounded").
 
 Removing an item from the equipment list moves it to a **Removed** list underneath, with
 "put back" - so a potion drunk in error, or a sword the DM hands back, is one click.

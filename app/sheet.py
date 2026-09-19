@@ -12,6 +12,7 @@ from .compendium import format as fmt
 from .compendium import rules
 from .compendium.loader import Compendium, entity_url
 from .db import Character
+from .narrative import describe
 from .themes import theme_key, theme_style
 
 # race entries that describe rather than grant something
@@ -103,7 +104,18 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
     for r in castable:
         ready_levels.setdefault(r["level"], []).append(r)
     theme = theme_key(ch, cls)
+    companions = []
+    for i, comp in enumerate(ch.companions or []):
+        hp_max = max(0, int(comp.get("hp_max", 0) or 0))
+        row = {"idx": i, "name": comp.get("name", "") or "Companion", "kind": comp.get("kind", ""),
+               "hp_max": hp_max, "hp_current": max(0, min(hp_max, int(comp.get("hp_current", 0) or 0))),
+               "ac": comp.get("ac", ""), "summoned": bool(comp.get("summoned")),
+               "conditions": list(comp.get("conditions") or []), "notes": comp.get("notes", "")}
+        row["seen"] = describe(row["name"], row["hp_current"], row["hp_max"], row["conditions"])
+        companions.append(row)
     return {
+        "seen": describe(ch.name, ch.hp_current, ch.hp_max, ch.conditions or []),
+        "companions": companions,
         "theme": theme,
         "theme_style": theme_style(theme),
         "ready_levels": ready_levels,

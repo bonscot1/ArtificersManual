@@ -1,0 +1,57 @@
+{% set ch = sheet.char %}
+<section class="win" id="companions">
+  <div class="win-title">Companions <span class="muted small">familiars, defenders, homunculi - the party sees them when summoned</span></div>
+  <div class="win-body">
+    {% for c in sheet.companions %}
+    <div class="companion {% if not c.summoned %}away{% endif %}">
+      <div class="companion-head">
+        <b>{{ c.name }}</b> <span class="muted small">{{ c.kind }}{% if c.ac %} &middot; AC {{ c.ac }}{% endif %}</span>
+        <button class="link" hx-post="/c/{{ ch.id }}/companions" hx-vals='{"op": "summon", "idx": {{ c.idx }}}' hx-target="#companions" hx-swap="outerHTML">{{ 'dismiss' if c.summoned else 'summon' }}</button>
+        {% if not readonly %}<button class="link muted" hx-post="/c/{{ ch.id }}/companions" hx-vals='{"op": "remove", "idx": {{ c.idx }}}' hx-target="#companions" hx-swap="outerHTML" hx-confirm="Remove {{ c.name }}?">remove</button>{% endif %}
+      </div>
+      {% if c.summoned %}
+      <div class="companion-hp">
+        <span class="hp-big small {% if c.hp_current == 0 %}down{% elif c.hp_current * 4 <= c.hp_max %}low{% endif %}">{{ c.hp_current }}</span><span class="hp-max">/ {{ c.hp_max }}</span>
+        <span class="seen-look" style="color: {{ c.seen.colour }}">{{ c.seen.health }}</span>
+        <form class="hp-actions" hx-post="/c/{{ ch.id }}/companions" hx-target="#companions" hx-swap="outerHTML">
+          <input type="hidden" name="idx" value="{{ c.idx }}">
+          <input type="number" name="amount" min="0" max="999" placeholder="0" inputmode="numeric">
+          <button name="op" value="damage" class="danger">Damage</button>
+          <button name="op" value="heal" class="good">Heal</button>
+        </form>
+      </div>
+      <div class="chips">
+        {% if is_dm %}
+          {% for name in sheet.condition_names %}<button class="chip {% if name in c.conditions %}on{% endif %}" hx-post="/c/{{ ch.id }}/companions" hx-vals='{"op": "condition", "idx": {{ c.idx }}, "name": "{{ name }}"}' hx-target="#companions" hx-swap="outerHTML">{{ name }}</button>{% endfor %}
+        {% else %}
+          {% for name in c.conditions %}<span class="chip warn">{{ name }}</span>{% endfor %}
+        {% endif %}
+      </div>
+      {% else %}<p class="muted small">Not summoned.</p>{% endif %}
+      {% if not readonly %}
+      <form class="trow companion-edit" hx-post="/c/{{ ch.id }}/companions" hx-trigger="change" hx-swap="none">
+        <input type="hidden" name="op" value="update"><input type="hidden" name="idx" value="{{ c.idx }}">
+        <input name="name" value="{{ c.name }}" placeholder="Name">
+        <input name="kind" value="{{ c.kind }}" placeholder="Owl familiar, Steel Defender...">
+        <input name="hp_max" value="{{ c.hp_max }}" class="short" title="max HP">
+        <input name="ac" value="{{ c.ac }}" class="short" placeholder="AC">
+        <input name="notes" value="{{ c.notes }}" placeholder="attacks, senses, notes">
+      </form>
+      {% elif c.notes %}<p class="small muted">{{ c.notes }}</p>{% endif %}
+    </div>
+    {% else %}
+    <p class="muted small">None yet.</p>
+    {% endfor %}
+    {% if not readonly %}
+    <form class="trow companion-edit add" hx-post="/c/{{ ch.id }}/companions" hx-target="#companions" hx-swap="outerHTML">
+      <input type="hidden" name="op" value="add">
+      <input name="name" placeholder="Name" required>
+      <input name="kind" placeholder="Owl familiar, Steel Defender...">
+      <input name="hp_max" placeholder="HP" class="short">
+      <input name="ac" placeholder="AC" class="short">
+      <input name="notes" placeholder="attacks, senses, notes">
+      <button>Add</button>
+    </form>
+    {% endif %}
+  </div>
+</section>

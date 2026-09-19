@@ -16,6 +16,7 @@
       {{ s.race.name if s.race else 'No race' }} &middot;
       {{ s.cls.name if s.cls else 'No class' }}{% if s.sub %} ({{ s.sub.name }}){% endif %} {{ ch.level }}
     </div>
+    {% if mine %}
     {% set pct = (100 * ch.hp_current / ch.hp_max) if ch.hp_max else 0 %}
     <div class="hpbar" title="{{ ch.hp_current }} / {{ ch.hp_max }}">
       <div class="hpbar-fill {% if pct <= 25 %}low{% elif pct <= 50 %}mid{% endif %}" style="width: {{ pct|round|int }}%"></div>
@@ -29,6 +30,21 @@
     </div>
     {% if ch.conditions %}<div class="chips">{% for c in ch.conditions %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
     {% if ch.hp_current == 0 %}<div class="chips"><span class="chip danger">Down - saves {{ ch.death_success }} / {{ ch.death_fail }}</span></div>{% endif %}
+    {% else %}
+    <div class="seen">
+      <span class="seen-dot" style="background: {{ s.seen.colour }}"></span>
+      <span style="color: {{ s.seen.colour }}">{{ s.seen.health|capitalize }}</span>
+      {% for look in s.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% for c in s.companions if c.summoned %}
+    <div class="seen small">
+      <span class="seen-dot" style="background: {{ c.seen.colour }}"></span>
+      <span class="muted">{{ c.name }}</span>{% if mine %} <span class="muted">{{ c.hp_current }}/{{ c.hp_max }}</span>{% endif %}
+      <span style="color: {{ c.seen.colour }}">{{ c.seen.health }}</span>
+      {% for look in c.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
+    </div>
+    {% endfor %}
     {% if is_dm and ch.notes_dm %}<div class="dm-snippet">{{ ch.notes_dm[:140] }}{% if ch.notes_dm|length > 140 %}&hellip;{% endif %}</div>{% endif %}
   </a>
 {% endfor %}

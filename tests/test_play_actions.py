@@ -93,4 +93,5 @@ def test_inspiration_and_conditions_are_the_dms_to_give(tmp_path):
     assert 'id="hud"' in r.text and 'class="chip on"' in r.text
     html = player.get(f"/c/{cid}").text
     assert 'class="chip warn"' in html and "Prone" in html and f'hx-post="/c/{cid}/conditions"' not in html
+    assert 'name="notes_dm"' not in html and 'name="notes_dm"' in dm.get(f"/c/{cid}").text
     assert f'hx-post="/c/{cid}/conditions"' in dm.get(f"/c/{cid}").text

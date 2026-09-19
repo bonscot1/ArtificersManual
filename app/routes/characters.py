@@ -214,7 +214,11 @@ async def play(request: Request, cid: int):
     """The table view: read-only, except what changes mid-session."""
     with _db(request) as session:
         ch = _load(request, session, cid)
-        return page(request, "play.html", sheet=build_sheet(ch, _comp(request)), readonly=True, view="play")
+        comp = _comp(request)
+        others = [build_sheet(o, comp) for o in session.scalars(select(Character).order_by(Character.name)).all()
+                  if o.id != cid]
+        return page(request, "play.html", sheet=build_sheet(ch, comp), sheets=others, me=cid,
+                    readonly=True, view="play")
 
 
 @router.get("/c/{cid}/sheet")
@@ -725,3 +729,73 @@ async def upload_art(request: Request, cid: int):
     resp = Response(status_code=204)
     resp.headers["HX-Refresh"] = "true"
     return resp
+
+
+# ----------------------------------------------------------------- what the others can see
+@router.get("/party/glance")
+async def party_glance(request: Request, me: int = 0):
+    """The rest of the party as this character sees them: phrases, not numbers (the DM gets both)."""
+    with _db(request) as session:
+        chars = session.scalars(select(Character).order_by(Character.name)).all()
+        sheets = [build_sheet(ch, _comp(request)) for ch in chars if ch.id != me]
+    return page(request, "partials/party_glance.html", sheets=sheets, me=me)
+
+
+# ----------------------------------------------------------------- companions: familiars, defenders, homunculi
+def _companion_fields(form, existing: dict | None = None) -> dict:
+    row = dict(existing or {"name": "", "kind": "", "hp_max": 1, "hp_current": 1, "ac": "", "summoned": True,
+                            "conditions": [], "notes": ""})
+    for f in ("name", "kind", "notes"):
+        if f in form:
+            row[f] = str(form[f]).strip()[:200]
+    if "ac" in form:
+        row["ac"] = str(form["ac"]).strip()[:6]
+    if "hp_max" in form:
+        row["hp_max"] = _clamp(form["hp_max"], 0, 9999, 1)
+        row["hp_current"] = min(int(row.get("hp_current", row["hp_max"])), row["hp_max"]) if existing else row["hp_max"]
+    return row
+
+
+@router.post("/c/{cid}/companions")
+async def companions(request: Request, cid: int):
+    form = await request.form()
+    op = str(form.get("op", ""))
+    idx = _clamp(form.get("idx"), -1, 999, -1)
+    comp = _comp(request)
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        rows = [dict(r) for r in (ch.companions or [])]
+        if op == "add":
+            row = _companion_fields(form)
+            if row["name"]:
+                rows.append(row)
+        elif 0 <= idx < len(rows):
+            row = rows[idx]
+            hp_max = int(row.get("hp_max", 0) or 0)
+            amount = _clamp(form.get("amount"), 0, 9999, 0)
+            if op == "remove":
+                rows.pop(idx)
+            elif op == "update":
+                rows[idx] = _companion_fields(form, row)
+            elif op == "damage":
+                row["hp_current"] = max(0, int(row.get("hp_current", 0) or 0) - amount)
+            elif op == "heal":
+                row["hp_current"] = min(hp_max, int(row.get("hp_current", 0) or 0) + amount)
+            elif op == "summon":
+                row["summoned"] = not row.get("summoned")
+                if row["summoned"] and int(row.get("hp_current", 0) or 0) <= 0:
+                    row["hp_current"] = hp_max
+            elif op == "condition":
+                _require_dm(request)
+                name = str(form.get("name", ""))
+                conds = list(row.get("conditions") or [])
+                if name in conds:
+                    conds.remove(name)
+                elif comp.find("condition", name):
+                    conds.append(name)
+                row["conditions"] = conds
+        ch.companions = rows
+        session.commit()
+        if op == "update":
+            return _toast(Response(status_code=204))
+        return _partial(request, "partials/companions.html", ch)

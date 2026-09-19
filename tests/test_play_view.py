@@ -14,9 +14,9 @@ def test_play_view_is_the_landing_page_and_is_read_only(client):
         assert needle in html, needle
     # not editable at the table
     for needle in ('name="score_str"', 'name="skill_prof"', 'name="class_key"', "Add a spell", "pick-add",
-                   'name="damage"', "counter-add", '"op": "remove", "key"', '"kind": "feat", "op": "remove"',
-                   'name="notes_dm"'):
+                   'name="damage"', "counter-add", '"op": "remove", "key"', '"kind": "feat", "op": "remove"'):
         assert needle not in html, needle
+    assert 'name="notes_dm"' in html                    # the test client is the DM
     assert "Fey Ancestry" in html and "Arcane Recovery" in html and "Dagger" in html and "Fireball" in html
 
 

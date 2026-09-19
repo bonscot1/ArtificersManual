@@ -71,6 +71,7 @@ class Character(Base):
     feats: Mapped[list] = mapped_column(JSON, default=list)            # [{"key": "Alert|PHB", "note": ""}]
     options: Mapped[list] = mapped_column(JSON, default=list)          # class options: infusions, invocations, styles...
     counters: Mapped[list] = mapped_column(JSON, default=list)         # [{"name": "Rage", "max": 2, "used": 0, "reset": "long"}]
+    companions: Mapped[list] = mapped_column(JSON, default=list)       # familiars, defenders: [{"name","kind","hp_max","hp_current","ac","summoned","conditions","notes"}]
 
     features_custom: Mapped[str] = mapped_column(Text, default="")     # anything the books don't fill in
     appearance: Mapped[str] = mapped_column(String(300), default="")   # age, height, eyes...

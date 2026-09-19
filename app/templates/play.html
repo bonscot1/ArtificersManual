@@ -54,7 +54,20 @@
     {% include "partials/counters.html" %}
   </section>
 
-  <section class="pane" data-modes="combat" data-combat-order="4">
+  <section class="pane" data-modes="combat rp all" data-tab="actions" data-combat-order="4" data-rp-order="2">
+    <section class="win">
+      <div class="win-title">The party <span class="muted small">as you see them</span></div>
+      <div class="win-body" hx-get="/party/glance?me={{ ch.id }}" hx-trigger="every 6s" hx-swap="innerHTML">
+        {% include "partials/party_glance.html" %}
+      </div>
+    </section>
+  </section>
+
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="6">
+    {% include "partials/companions.html" %}
+  </section>
+
+  <section class="pane" data-modes="combat" data-combat-order="5">
     <section class="win">
       <div class="win-title">Saving throws</div>
       <div class="win-body rows two">
@@ -65,7 +78,7 @@
     </section>
   </section>
 
-  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="5">
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="7">
     <section class="win">
       <div class="win-title">Rest &amp; recovery</div>
       <div class="win-body hp-foot">
@@ -147,6 +160,17 @@
   <section class="pane" data-modes="rp all" data-tab="features" data-rp-order="5">
     {% include "partials/features.html" %}
   </section>
+
+  {% if is_dm %}
+  <section class="pane" data-modes="rp all" data-tab="notes" data-rp-order="3">
+    <section class="win dm">
+      <div class="win-title">DM notes <span class="muted small">only you see this</span></div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <textarea name="notes_dm" rows="10">{{ ch.notes_dm }}</textarea>
+      </form>
+    </section>
+  </section>
+  {% endif %}
 
   <section class="pane" data-modes="rp all" data-tab="notes" data-rp-order="6">
     <section class="win">
