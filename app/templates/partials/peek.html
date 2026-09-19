@@ -1,0 +1,15 @@
+<div class="peek-card">
+  <div class="peek-head">
+    <b>{{ e.name }}</b> <span class="muted small">{{ kind|replace('optionalfeature', 'option') }} &middot; {{ e.source }}</span>
+    <a class="small" href="{{ entity_url(kind, e) }}" target="_blank" rel="noopener">open in compendium</a>
+    <button type="button" class="link" onclick="this.closest('.peek-card').remove()" title="close">x</button>
+  </div>
+  {% if kind == 'item' %}
+    <p class="muted small">{{ e|weapon_summary }}{{ e|armor_summary }}{% if e.rarity and e.rarity != 'none' %} &middot; {{ e.rarity }}{% if e.reqAttune %} (requires attunement){% endif %}{% endif %}{% if e.value %} &middot; {{ (e.value / 100)|round(2) }} gp{% endif %}{% if e.weight %} &middot; {{ e.weight }} lb.{% endif %}</p>
+  {% elif kind == 'spell' %}
+    <p class="muted small">{{ e|spell_level_label }} &middot; {{ e|spell_time }} &middot; {{ e|spell_range }} &middot; {{ e|spell_components }} &middot; {{ e|spell_duration }}</p>
+  {% elif e.prerequisite %}
+    <p class="muted small"><i>Prerequisite: {{ e.prerequisite|prereq }}</i></p>
+  {% endif %}
+  <div class="peek-body">{{ e.entries|entries }}{% if e.entriesHigherLevel %}{{ e.entriesHigherLevel|entries }}{% endif %}</div>
+</div>

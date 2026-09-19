@@ -26,7 +26,8 @@ def _board(request: Request, session) -> list[dict]:
 
 def _outbox(session, limit: int = 40) -> list[dict]:
     """Recent messages grouped by batch, newest first."""
-    rows = session.scalars(select(Message).order_by(Message.id.desc()).limit(limit * 4)).all()
+    rows = session.scalars(select(Message).where(Message.batch != "dm-edit")
+                           .order_by(Message.id.desc()).limit(limit * 4)).all()
     names = {c.id: c.name for c in session.scalars(select(Character)).all()}
     batches: dict[str, dict] = {}
     for m in rows:

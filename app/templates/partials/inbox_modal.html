@@ -1,7 +1,8 @@
 <div class="modal-backdrop">
-  <div class="modal" data-mid="{{ m.id }}">
-    <div class="modal-head">A message from the DM{% if more %} <span class="muted small">{{ more }} more waiting</span>{% endif %}</div>
-    <div class="modal-text">{{ m.text }}</div>
+  <div class="modal" data-mid="{{ m.id }}-{{ m.text|length }}">
+    <div class="modal-head">{{ 'Your sheet changed' if m.batch == 'dm-edit' else 'A message from the DM' }}{% if more %} <span class="muted small">{{ more }} more waiting</span>{% endif %}</div>
+    <div class="modal-text">{{ m.text|linkify('#peek-' ~ m.id) }}</div>
+    <div class="peek" id="peek-{{ m.id }}"></div>
     {% if error %}<p class="err">{{ error }}</p>{% endif %}
     {% if m.kind == 'choice' %}
     <div class="modal-options">

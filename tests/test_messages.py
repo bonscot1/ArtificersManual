@@ -35,8 +35,9 @@ def test_note_pops_up_for_the_recipient_until_dismissed(tmp_path):
     assert pb.get(f"/c/{b}/inbox").status_code == 204                      # Bea gets nothing
     assert f'hx-get="/c/{a}/inbox"' in pa.get(f"/c/{a}").text             # the page polls for it
     mid = int(r.text.split(f"/c/{a}/inbox/")[1].split('"')[0])
-    assert pa.get(f"/c/{a}/inbox", params={"shown": mid}).status_code == 204       # already on screen: no re-render
-    assert pa.get(f"/c/{a}/inbox", params={"shown": "999"}).status_code == 200
+    shown = r.text.split('data-mid="')[1].split('"')[0]
+    assert pa.get(f"/c/{a}/inbox", params={"shown": shown}).status_code == 204     # already on screen: no re-render
+    assert pa.get(f"/c/{a}/inbox", params={"shown": "999-1"}).status_code == 200
     r = pa.post(f"/c/{a}/inbox/{mid}")
     assert r.status_code == 200 and r.text == ""
     assert pa.get(f"/c/{a}/inbox").status_code == 204

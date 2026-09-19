@@ -1,0 +1,5 @@
+{% for kind, e in hits %}
+<button type="button" class="chip" onclick='var t = this.closest("form").querySelector("[name=text]"); t.value = (t.value ? t.value.replace(/\s*$/, " ") : "") + {{ ("[[" ~ e.name ~ "]]")|tojson }}; t.focus(); this.closest(".link-results").innerHTML = "";'>{{ e.name }} <span class="muted">{{ kind|replace('optionalfeature', 'option') }}</span></button>
+{% else %}
+{% if q|length >= 2 %}<span class="muted small">nothing called that</span>{% endif %}
+{% endfor %}

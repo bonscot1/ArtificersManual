@@ -155,3 +155,28 @@ async def conditions(request: Request):
 @router.get("/conditions/{key}")
 async def condition(request: Request, key: str):
     return page(request, "compendium/entry.html", title="Condition", kind=None, e=_get(request, "condition", key))
+
+
+@router.get("/peek/{kind}/{key}")
+async def peek(request: Request, kind: str, key: str):
+    """A compact entry to drop into a popup or under an inventory row."""
+    if kind not in ("item", "spell", "condition", "feat", "optionalfeature", "race", "class", "background"):
+        raise HTTPException(404, "Nothing to show")
+    e = _get(request, kind, key)
+    return page(request, "partials/peek.html", kind=kind, e=e)
+
+
+@router.get("/link-search")
+async def link_search(request: Request, q: str = ""):
+    """Names the DM can drop into a message as [[links]]."""
+    from ..compendium.linkify import KIND_ORDER
+    comp = _comp(request)
+    ql = q.strip().lower()
+    hits = []
+    if len(ql) >= 2:
+        for kind in KIND_ORDER:
+            for e in comp.store(kind).values():
+                if ql in e["name"].lower():
+                    hits.append((kind, e))
+        hits.sort(key=lambda h: (not h[1]["name"].lower().startswith(ql), h[1]["name"]))
+    return page(request, "partials/link_search.html", hits=hits[:12], q=q)

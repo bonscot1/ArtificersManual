@@ -69,8 +69,10 @@ def test_inventory_links_known_items(client):
     cid = create_character(client)
     client.post(f"/c/{cid}/inventory", data={"op": "add", "name": "Belt of Dwarven Kind", "qty": "1"})
     r = client.post(f"/c/{cid}/inventory", data={"op": "add", "name": "Hand Axe (x2)", "qty": "2"})
-    assert "/compendium/items/Belt%20of%20Dwarvenkind%7CDMG" in r.text
-    assert "/compendium/items/Handaxe%7CPHB" in r.text
+    assert "/compendium/peek/item/Belt%20of%20Dwarvenkind%7CDMG" in r.text     # "read" opens the entry in place
+    assert "/compendium/peek/item/Handaxe%7CPHB" in r.text
     r = client.post(f"/c/{cid}/inventory", data={"op": "add", "name": "1 x Tinkers Tools", "qty": "1"})
     assert "Tinker%27s%20Tools%7CPHB" in r.text
+    peek = client.get("/compendium/peek/item/Belt%20of%20Dwarvenkind%7CDMG")
+    assert peek.status_code == 200 and "peek-card" in peek.text and "Dwarvish" in peek.text and "requires attunement" in peek.text
     assert client.get("/compendium/items/Belt%20of%20Dwarvenkind%7CDMG").status_code == 200

@@ -25,7 +25,12 @@
         <label class="check"><input type="radio" name="kind" value="choice"> Choice <span class="muted small">they pick one option</span></label>
         <label class="check"><input type="radio" name="kind" value="prompt"> Question <span class="muted small">they type a reply</span></label>
       </div>
-      <textarea name="text" rows="3" placeholder="What they see. Only the people you tick get it." required></textarea>
+      <textarea name="text" rows="3" placeholder="What they see. Only the people you tick get it. [[Potion of Healing]] becomes a link they can read." required></textarea>
+      <div class="link-helper">
+        <input type="search" name="linkq" placeholder="Link an item, spell, condition..." autocomplete="off"
+               hx-get="/compendium/link-search" hx-trigger="input changed delay:200ms" hx-target="next .link-results" hx-swap="innerHTML">
+        <div class="link-results chips"></div>
+      </div>
       <textarea name="options" rows="3" placeholder="Choice options, one per line - e.g.&#10;The sword&#10;The bow"></textarea>
       <button class="primary">Send</button>
     </form>

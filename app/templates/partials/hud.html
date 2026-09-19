@@ -51,8 +51,9 @@
       {% if is_dm %}
         {% for name in sheet.condition_names %}<button class="chip {% if name in sheet.conditions %}on{% endif %}" hx-post="/c/{{ ch.id }}/conditions" hx-vals='{"name": "{{ name }}", "view": "play"}' hx-target="#hud" hx-swap="outerHTML">{{ name }}</button>{% endfor %}
       {% elif sheet.conditions %}
-        {% for name in sheet.conditions %}<a class="chip warn" href="/compendium/conditions#{{ name|lower }}" title="what this does">{{ name }}</a>{% endfor %}
+        {% for name in sheet.conditions %}<button type="button" class="chip warn" hx-get="/compendium/peek/condition/{{ (name ~ '|PHB')|urlencode }}" hx-target="#hud-peek" hx-swap="innerHTML" title="what this does">{{ name }}</button>{% endfor %}
       {% else %}<span class="muted small">none</span>{% endif %}
     </span>
   </div>
+  <div class="peek hud-peek" id="hud-peek"></div>
 </div>

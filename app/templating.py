@@ -9,6 +9,7 @@ from markupsafe import Markup
 
 from .compendium import format as fmt
 from .compendium import rules
+from .compendium.linkify import linkify, peek_url
 from .compendium.loader import Compendium, entity_url, key, wikidot_url
 from .compendium.render import Renderer
 from .themes import theme_choices
@@ -40,6 +41,8 @@ def build_templates(compendium: Compendium) -> Jinja2Templates:
     env.filters["ekey"] = lambda e: key(e["name"], e["source"])
     env.globals["entity_url"] = entity_url
     env.globals["wikidot_url"] = wikidot_url
+    env.globals["peek_url"] = peek_url
+    env.filters["linkify"] = lambda text, target="": linkify(text, compendium, target)
     env.globals["theme_choices"] = theme_choices
     env.globals["ABILITIES"] = rules.ABILITIES
     env.globals["ABILITY_NAMES"] = rules.ABILITY_NAMES

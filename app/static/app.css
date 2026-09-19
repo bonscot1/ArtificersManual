@@ -378,3 +378,14 @@ details.all-spells > summary { cursor: pointer; color: var(--ink-2); }
 .modal-text { font-size: 1.05rem; line-height: 1.5; white-space: pre-line; margin-bottom: .9rem; }
 .modal-options { display: flex; flex-direction: column; gap: .4rem; }
 button.cast-opt.big { font-size: 1rem; padding: .5rem .9rem; text-align: left; }
+
+/* ---- compendium peeks + links */
+.peek-link { color: var(--gold); border-bottom: 1px dotted var(--gold); cursor: pointer; }
+.peek-card { background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: var(--radius); padding: .5rem .7rem; margin: .5rem 0; font-size: .9rem; max-height: 22rem; overflow: auto; }
+.peek-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.peek-head .link { margin-left: auto; }
+.hud-peek { grid-column: 1 / -1; }
+.hud-peek:empty { display: none; }
+.link-helper .link-results { margin-top: .3rem; }
+.link-helper input { font-size: .85rem; }
+.modal .peek-card { max-height: 16rem; }

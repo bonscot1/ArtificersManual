@@ -73,6 +73,39 @@ def _toast(resp: Response, text: str = "Saved") -> Response:
     return resp
 
 
+def notify(request: Request, session, ch: Character, text: str) -> None:
+    """When the DM changes a character's sheet, the player gets a popup saying what changed.
+    Several changes within a few minutes fold into the one waiting popup."""
+    if request.state.role != "dm" or not text:
+        return
+    last = session.scalars(select(Message).where(Message.character_id == ch.id, Message.status == "pending",
+                                                 Message.batch == "dm-edit").order_by(Message.id.desc())).first()
+    if last and _age_seconds(last.created_at) < 180 and len(last.text) < 1500:
+        last.text = last.text + "\n" + text
+    else:
+        session.add(Message(batch="dm-edit", character_id=ch.id, kind="note", text=text))
+
+
+def _age_seconds(dt) -> float:
+    if dt is None:
+        return 1e9
+    now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.utcnow()
+    return (now - dt).total_seconds()
+
+
+FIELD_LABELS = {
+    "name": "name", "player": "player", "alignment": "alignment", "appearance": "appearance", "level": "level",
+    "xp": "XP", "hp_max": "max HP", "hp_temp": "temporary HP", "ac": "AC", "speed": "speed",
+    "initiative_bonus": "initiative bonus", "score_str": "Strength", "score_dex": "Dexterity",
+    "score_con": "Constitution", "score_int": "Intelligence", "score_wis": "Wisdom", "score_cha": "Charisma",
+    "other_profs": "proficiencies", "features_custom": "other features", "personality": "personality",
+    "allies": "allies", "notes": "session notes", "backstory": "backstory", "race_key": "race",
+    "subrace_key": "subrace", "class_key": "class", "subclass_key": "subclass", "background_key": "background",
+    "save_profs": "saving throws", "skill_profs": "skills", "skill_expertise": "expertise",
+    "inspiration": "inspiration", "currency": "coins", "theme": "theme",
+}
+
+
 def _clamp(value, lo: int, hi: int, default: int = 0) -> int:
     try:
         return max(lo, min(hi, int(str(value).strip() or default)))
@@ -204,6 +237,7 @@ async def password_reset(request: Request, cid: int):
     with _db(request) as session:
         ch = _fetch(session, cid)
         ch.password_hash = ""
+        notify(request, session, ch, "The DM cleared your password - set a new one next time you open the sheet.")
         session.commit()
     return _toast(Response(status_code=204), "Password cleared - the next person to open the sheet sets a new one")
 
@@ -239,6 +273,7 @@ async def save(request: Request, cid: int):
     structural = False
     with _db(request) as session:
         ch = _load(request, session, cid)
+        before = {f: getattr(ch, f) for f in FIELD_LABELS}
         for field, limit in TEXT_FIELDS.items():
             if field in form:
                 setattr(ch, field, str(form[field])[:limit].strip() if field in ("name", "player", "alignment", "appearance") else str(form[field])[:limit])
@@ -292,6 +327,18 @@ async def save(request: Request, cid: int):
             _require_dm(request)
             ch.notes_dm = str(form["notes_dm"])[:40000]
         ch.hp_current = min(ch.hp_current, ch.hp_max)
+        changes = []
+        for f, label in FIELD_LABELS.items():
+            if getattr(ch, f) != before[f]:
+                old_v, new_v = before[f], getattr(ch, f)
+                if isinstance(new_v, (int, bool)) and not isinstance(new_v, bool):
+                    changes.append(f"{label} {old_v} → {new_v}")
+                elif f.endswith("_key"):
+                    changes.append(f"{label}: {str(new_v).split('|')[0] or 'none'}")
+                else:
+                    changes.append(label)
+        if changes:
+            notify(request, session, ch, "The DM changed your sheet: " + "; ".join(changes) + ".")
         session.commit()
         if structural:
             resp = Response(status_code=204)
@@ -328,6 +375,12 @@ async def hp(request: Request, cid: int):
             ch.death_success = ch.death_fail = 0
         elif action == "hit_die":
             ch.hit_dice_used = _clamp(ch.hit_dice_used + _clamp(form.get("delta"), -20, 20, 0), 0, ch.level, 0)
+        notify(request, session, ch, {
+            "damage": f"The DM dealt you {amount} damage.", "heal": f"The DM healed you for {amount}.",
+            "set": f"The DM set your HP to {amount}.", "temp": f"The DM set your temporary HP to {amount}.",
+            "death_success": "The DM marked a death save success.", "death_fail": "The DM marked a death save failure.",
+            "death_reset": "The DM reset your death saves.", "hit_die": "The DM changed your hit dice.",
+        }.get(action, ""))
         session.commit()
         if str(form.get("view")) == "play":
             return _partial(request, "partials/hud.html", ch)
@@ -347,6 +400,7 @@ async def slot(request: Request, cid: int):
             slots = dict(ch.slots_used or {})
             slots[level] = used
             ch.slots_used = slots
+        notify(request, session, ch, "The DM changed your spell slots.")
         session.commit()
         return _partial(request, "partials/slots.html", ch)
 
@@ -369,6 +423,7 @@ async def rest(request: Request, cid: int):
             ch.concentration = ""
             ch.death_success = ch.death_fail = 0
             ch.hit_dice_used = max(0, ch.hit_dice_used - max(1, ch.level // 2))
+        notify(request, session, ch, f"The DM gave you a {'long' if kind == 'long' else 'short'} rest.")
         session.commit()
     resp = Response(status_code=204)
     resp.headers["HX-Refresh"] = "true"
@@ -407,6 +462,11 @@ async def spells(request: Request, cid: int):
                 if s.get("key") == key:
                     s["prepared"] = not s.get("prepared")
         ch.spells = current
+        if key in comp.spells:
+            spell_name = comp.spells[key]["name"]
+            notify(request, session, ch, {"add": f"The DM added [[{spell_name}|spell]] to your spells.",
+                                          "remove": f"The DM removed [[{spell_name}|spell]] from your spells.",
+                                          "prepare": f"The DM changed whether [[{spell_name}|spell]] is prepared."}.get(op, ""))
         session.commit()
         if str(form.get("view")) == "play":
             return _partial(request, "partials/spells_play.html", ch)
@@ -447,6 +507,7 @@ async def attacks(request: Request, cid: int):
                 form["damage"] = filled["damage"]
                 form["notes"] = form.get("notes") or filled["notes"]
         ch.attacks = _rows_update(rows, form, ("name", "bonus", "damage", "notes"))
+        notify(request, session, ch, "The DM changed your attacks.")
         session.commit()
         if str(form.get("op")) == "update":
             return _toast(Response(status_code=204))
@@ -476,6 +537,15 @@ async def inventory(request: Request, cid: int):
         else:
             rows = _rows_update(rows, form, ("name", "qty", "notes"))
         ch.inventory, ch.inventory_removed = rows, removed
+        item = str(form.get("name", "")).strip()
+        qty = str(form.get("qty", "")).strip()
+        told = {
+            "add": f"The DM gave you [[{item}]]{' (x' + qty + ')' if qty not in ('', '1') else ''}." if item else "",
+            "remove": f"The DM took your [[{removed[0]['name']}]]." if op == "remove" and removed else "",
+            "restore": f"The DM gave back your [[{rows[-1]['name']}]]." if op == "restore" and rows else "",
+            "update": f"The DM changed an item: [[{item}]]." if item else "",
+        }
+        notify(request, session, ch, told.get(op, ""))
         session.commit()
         if op == "update":
             return _toast(Response(status_code=204))
@@ -493,8 +563,10 @@ async def conditions(request: Request, cid: int):
         current = list(ch.conditions or [])
         if name in current:
             current.remove(name)
+            notify(request, session, ch, f"The DM cleared [[{name}|condition]].")
         elif comp.find("condition", name):
             current.append(name)
+            notify(request, session, ch, f"The DM marked you [[{name}|condition]].")
         ch.conditions = current
         session.commit()
         if str(form.get("view")) == "play":
@@ -558,6 +630,10 @@ async def picks(request: Request, cid: int):
             ch.feats = current
         else:
             ch.options = current
+        what = "feat" if kind == "feat" else "class option"
+        picked = store[key]["name"] if key in store else ""
+        notify(request, session, ch, {"add": f"The DM added the {what} [[{picked}|{'feat' if kind == 'feat' else 'optionalfeature'}]].",
+                                      "remove": f"The DM removed a {what}.", "note": f"The DM changed a note on a {what}."}.get(op, ""))
         session.commit()
         if op == "note":
             return _toast(Response(status_code=204))
@@ -589,6 +665,8 @@ async def counters(request: Request, cid: int):
             elif op == "undo":
                 row["used"] = max(0, int(row.get("used", 0) or 0) - 1)
         ch.counters = rows
+        notify(request, session, ch, "The DM changed your resources." if op != "add" else
+               f"The DM added a resource: {str(form.get('name', '')).strip()}.")
         session.commit()
         return _partial(request, "partials/counters.html", ch, **_view(form))
 
@@ -648,6 +726,7 @@ async def cast(request: Request, cid: int):
             if ch.concentration and ch.concentration != spell["name"]:
                 ended = f"; concentration on {ch.concentration} ended"
             ch.concentration = spell["name"]
+        notify(request, session, ch, f"The DM cast [[{spell['name']}|spell]] for you ({how}){ended}.")
         session.commit()
         resp = _partial(request, "partials/spells_play.html", ch, oob_hud=True)
     return _toast(resp, f"Cast {spell['name']} ({how}){ended}")
@@ -658,6 +737,8 @@ async def concentration(request: Request, cid: int):
     with _db(request) as session:
         ch = _load(request, session, cid)
         name, ch.concentration = ch.concentration, ""
+        if name:
+            notify(request, session, ch, f"The DM ended your concentration on {name}.")
         session.commit()
         resp = _partial(request, "partials/hud.html", ch)
     return _toast(resp, f"Concentration on {name} ended" if name else "Not concentrating")
@@ -674,10 +755,12 @@ async def inspiration(request: Request, cid: int):
             _require_dm(request)
             ch.inspiration = True
             text = "Inspiration granted"
+            notify(request, session, ch, "The DM gave you inspiration.")
         elif op == "revoke":
             _require_dm(request)
             ch.inspiration = False
             text = "Inspiration removed"
+            notify(request, session, ch, "The DM took your inspiration.")
         else:
             if not ch.inspiration:
                 return _toast(_partial(request, "partials/hud.html", ch), "No inspiration to spend")
@@ -725,6 +808,7 @@ async def upload_art(request: Request, cid: int):
         name = f"{cid}-{kind}{ART_TYPES[file.content_type]}"
         (art_dir / name).write_bytes(data)
         setattr(ch, kind, name)
+        notify(request, session, ch, f"The DM changed your {kind}.")
         session.commit()
     resp = Response(status_code=204)
     resp.headers["HX-Refresh"] = "true"
@@ -795,6 +879,15 @@ async def companions(request: Request, cid: int):
                     conds.append(name)
                 row["conditions"] = conds
         ch.companions = rows
+        who = rows[idx]["name"] if 0 <= idx < len(rows) else str(form.get("name", "")).strip()
+        notify(request, session, ch, {
+            "add": f"The DM added a companion: {who}.", "remove": "The DM removed a companion.",
+            "damage": f"The DM dealt {who} {_clamp(form.get('amount'), 0, 9999, 0)} damage.",
+            "heal": f"The DM healed {who} for {_clamp(form.get('amount'), 0, 9999, 0)}.",
+            "summon": f"The DM {'summoned' if rows[idx].get('summoned') else 'dismissed'} {who}." if 0 <= idx < len(rows) else "",
+            "condition": f"The DM changed {who}'s conditions: [[{str(form.get('name', ''))}|condition]].",
+            "update": f"The DM changed {who}.",
+        }.get(op, ""))
         session.commit()
         if op == "update":
             return _toast(Response(status_code=204))
@@ -814,7 +907,7 @@ async def inbox(request: Request, cid: int, shown: str = ""):
     with _db(request) as session:
         ch = _load(request, session, cid)
         m = _next_message(session, cid)
-        if not m or str(m.id) == shown:
+        if not m or f"{m.id}-{len(m.text)}" == shown:      # same message, same text: leave the popup alone
             return Response(status_code=204)
         waiting = session.scalars(select(Message).where(Message.character_id == cid, Message.status == "pending")).all()
         return page(request, "partials/inbox_modal.html", char=ch, m=m, more=len(waiting) - 1)

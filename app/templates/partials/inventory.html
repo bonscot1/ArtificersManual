@@ -15,9 +15,10 @@
         <input name="qty" value="{{ it.qty }}" class="short">
         <input name="name" value="{{ it.name }}">
         <input name="notes" value="{{ it.notes }}">
-        {% if loop.index0 in sheet.inventory_links %}<a class="small" href="{{ sheet.inventory_links[loop.index0] }}" title="in the books">book</a>{% else %}<span></span>{% endif %}
+        {% if loop.index0 in sheet.inventory_links %}<button type="button" class="link small" hx-get="{{ sheet.inventory_links[loop.index0]|replace('/compendium/items/', '/compendium/peek/item/') }}" hx-target="#inv-peek-{{ loop.index0 }}" hx-swap="innerHTML" title="read the entry">read</button>{% else %}<span></span>{% endif %}
         <button type="button" class="link" hx-post="/c/{{ ch.id }}/inventory" hx-vals='{"op": "remove", "idx": {{ loop.index0 }}}' hx-target="#inventory" hx-swap="outerHTML" title="remove">x</button>
       </form>
+      <div class="peek" id="inv-peek-{{ loop.index0 }}"></div>
       {% endfor %}
       <form class="trow inv add" hx-post="/c/{{ ch.id }}/inventory" hx-target="#inventory" hx-swap="outerHTML">
         <input type="hidden" name="op" value="add">

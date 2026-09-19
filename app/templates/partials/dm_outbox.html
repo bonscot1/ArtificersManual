@@ -4,7 +4,7 @@
 {% for b in outbox %}
 <div class="sent-msg">
   <div class="sent-head"><span class="chip">{{ {'note': 'note', 'choice': 'choice', 'prompt': 'question'}[b.kind] }}</span> <span class="muted small">{{ b.created_at.strftime('%H:%M') if b.created_at else '' }}</span></div>
-  <div class="sent-text">{{ b.text }}</div>
+  <div class="sent-text">{{ b.text|linkify }}</div>
   {% if b.options %}<div class="muted small">{{ b.options|join(' / ') }}</div>{% endif %}
   <ul class="sent-to">
     {% for t in b.to %}

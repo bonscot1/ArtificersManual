@@ -71,6 +71,15 @@ Tick who it goes to (or everyone). It pops up over whatever page that character 
 a couple of seconds and stays until they act on it; further messages queue behind it. Answers
 appear in the Sent list as they come in; a pending message can be cancelled.
 
+Write `[[Potion of Healing]]` (or `[[Bless|spell]]`) in a message and it becomes a link that opens
+the compendium entry inside the popup; the box under the message searches names to insert.
+
+**Anything the DM does to a sheet tells the player** - a condition, inspiration, damage, an item
+handed over or taken, a spell added, XP - as a "Your sheet changed" popup listing the changes
+(several within a few minutes fold into one). Items and conditions in it are links to their
+entries. Players' own edits don't notify anyone. On the play view, "read" next to an item and
+tapping a condition in the HUD open the entry in place too.
+
 Removing an item from the equipment list moves it to a **Removed** list underneath, with
 "put back" - so a potion drunk in error, or a sword the DM hands back, is one click.
 
