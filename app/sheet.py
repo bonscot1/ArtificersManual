@@ -96,7 +96,13 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
         item = c.find("item", wanted) or c.find("item", wanted.rstrip("s"))
         if item:
             inventory_links[i] = entity_url("item", item)
+    castable = [r for r in spell_rows
+                if r["level"] == 0 or r["prepared"] or not (spellcasting or {}).get("prepares")]
+    ready_levels: dict[int, list] = {}
+    for r in castable:
+        ready_levels.setdefault(r["level"], []).append(r)
     return {
+        "ready_levels": ready_levels,
         "inventory_links": inventory_links,
         "feats": feat_rows,
         "options": option_rows,
@@ -132,6 +138,7 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
         "spellcasting": spellcasting,
         "spell_levels": spell_levels,
         "spell_count": len(spell_rows),
+        "spell_total": len(spell_rows),
         "prepared_count": sum(1 for r in spell_rows if r["prepared"] and r["level"] > 0 and not r["always"]),
         "racial_spells": racial_spells(race, ch.level, c) if race else [],
         "conditions": list(ch.conditions or []),
@@ -308,4 +315,22 @@ def racial_spells(race: dict, level: int, c: Compendium) -> list[str]:
                         if ability:
                             line += f" - {ability}"
                         out.append(line)
+    return out
+
+
+def cast_options(sheet: dict, spell: dict) -> list[dict]:
+    """How this spell can be cast right now: which slot levels have a slot left, pact, ritual."""
+    sc = sheet["spellcasting"] or {}
+    level = spell.get("level", 0)
+    out = []
+    if level == 0:
+        return [{"slot": "cantrip", "label": "Cast"}]
+    for s in sc.get("slots", []):
+        if s["level"] >= level and s["used"] < s["total"]:
+            out.append({"slot": str(s["level"]), "label": f"{s['label']} ({s['total'] - s['used']} left)"})
+    pact = sc.get("pact")
+    if pact and pact["level"] >= level and pact["used"] < pact["count"]:
+        out.append({"slot": "pact", "label": f"Pact {pact['label']} ({pact['count'] - pact['used']} left)"})
+    if (spell.get("meta") or {}).get("ritual"):
+        out.append({"slot": "ritual", "label": "Ritual (no slot, +10 min)"})
     return out

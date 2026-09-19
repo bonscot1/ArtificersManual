@@ -12,7 +12,7 @@ from .. import auth
 from ..compendium import format as fmt
 from ..compendium import rules
 from ..db import Character
-from ..sheet import build_sheet, default_hp
+from ..sheet import build_sheet, cast_options, default_hp
 from ..templating import page
 
 router = APIRouter()
@@ -236,7 +236,7 @@ async def save(request: Request, cid: int):
         if not ch.name:
             ch.name = "Unnamed"
         for field, (lo, hi) in INT_FIELDS.items():
-            if field in form:
+            if field in form and (field != "xp" or request.state.role == "dm"):
                 setattr(ch, field, _clamp(form[field], lo, hi, getattr(ch, field)))
         if "level" in form:
             new_level = _clamp(form["level"], 1, 20, ch.level)
@@ -270,7 +270,7 @@ async def save(request: Request, cid: int):
             ch.skill_profs = [s for s in form.getlist("skill_prof") if s in rules.SKILL_ABILITY]
         if "skill_expertise" in lists:
             ch.skill_expertise = [s for s in form.getlist("skill_expertise") if s in rules.SKILL_ABILITY]
-        if "inspiration" in lists:
+        if "inspiration" in lists and request.state.role == "dm":
             ch.inspiration = "inspiration" in form
         if "currency" in lists:
             ch.currency = {k: _clamp(form.get(f"cur_{k}"), 0, 999_999, 0) for k in ("cp", "sp", "ep", "gp", "pp")}
@@ -315,6 +315,8 @@ async def hp(request: Request, cid: int):
         elif action == "hit_die":
             ch.hit_dice_used = _clamp(ch.hit_dice_used + _clamp(form.get("delta"), -20, 20, 0), 0, ch.level, 0)
         session.commit()
+        if str(form.get("view")) == "play":
+            return _partial(request, "partials/hud.html", ch)
         return _partial(request, "partials/hp.html", ch)
 
 
@@ -350,6 +352,7 @@ async def rest(request: Request, cid: int):
         if kind == "long":
             ch.hp_current, ch.hp_temp = ch.hp_max, 0
             ch.slots_used = {}
+            ch.concentration = ""
             ch.death_success = ch.death_fail = 0
             ch.hit_dice_used = max(0, ch.hit_dice_used - max(1, ch.level // 2))
         session.commit()
@@ -391,6 +394,8 @@ async def spells(request: Request, cid: int):
                     s["prepared"] = not s.get("prepared")
         ch.spells = current
         session.commit()
+        if str(form.get("view")) == "play":
+            return _partial(request, "partials/spells_play.html", ch)
         return _partial(request, "partials/spells_oob.html", ch, **_view(form))
 
 
@@ -465,6 +470,7 @@ async def inventory(request: Request, cid: int):
 
 @router.post("/c/{cid}/conditions")
 async def conditions(request: Request, cid: int):
+    _require_dm(request)
     form = await request.form()
     name = str(form.get("name", ""))
     comp = _comp(request)
@@ -477,6 +483,8 @@ async def conditions(request: Request, cid: int):
             current.append(name)
         ch.conditions = current
         session.commit()
+        if str(form.get("view")) == "play":
+            return _partial(request, "partials/hud.html", ch)
         return _partial(request, "partials/conditions.html", ch)
 
 
@@ -569,3 +577,98 @@ async def counters(request: Request, cid: int):
         ch.counters = rows
         session.commit()
         return _partial(request, "partials/counters.html", ch, **_view(form))
+
+
+# ----------------------------------------------------------------- casting
+def _spell_row(sheet: dict, key: str) -> dict | None:
+    for rows in sheet["ready_levels"].values():
+        for r in rows:
+            if r["key"] == key:
+                return r
+    return None
+
+
+@router.get("/c/{cid}/cast-options")
+async def cast_options_fragment(request: Request, cid: int, key: str = "", cancel: str = ""):
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        sheet = build_sheet(ch, _comp(request))
+    row = _spell_row(sheet, key)
+    if not row:
+        raise HTTPException(404, "Not a spell you can cast")
+    return page(request, "partials/cast_options.html", char=ch, row=row,
+                options=[] if cancel else cast_options(sheet, row["spell"]), open=not cancel)
+
+
+@router.post("/c/{cid}/cast")
+async def cast(request: Request, cid: int):
+    form = await request.form()
+    key, slot = str(form.get("key", "")), str(form.get("slot", ""))
+    comp = _comp(request)
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        sheet = build_sheet(ch, comp)
+        row = _spell_row(sheet, key)
+        if not row:
+            raise HTTPException(400, "Not a spell you can cast")
+        spell = row["spell"]
+        allowed = {o["slot"]: o for o in cast_options(sheet, spell)}
+        if slot not in allowed:
+            resp = _partial(request, "partials/spells_play.html", ch)
+            return _toast(resp, "No slot left for that")
+        how = allowed[slot]["label"]
+        if slot.isdigit():
+            used = dict(ch.slots_used or {})
+            used[slot] = int(used.get(slot, 0) or 0) + 1
+            ch.slots_used = used
+            how = f"{rules.ordinal(int(slot))}-level slot"
+        elif slot == "pact":
+            ch.pact_used = (ch.pact_used or 0) + 1
+            how = "pact slot"
+        elif slot == "ritual":
+            how = "ritual"
+        else:
+            how = "cantrip"
+        ended = ""
+        if any(d.get("concentration") for d in spell.get("duration", [])):
+            if ch.concentration and ch.concentration != spell["name"]:
+                ended = f"; concentration on {ch.concentration} ended"
+            ch.concentration = spell["name"]
+        session.commit()
+        resp = _partial(request, "partials/spells_play.html", ch, oob_hud=True)
+    return _toast(resp, f"Cast {spell['name']} ({how}){ended}")
+
+
+@router.post("/c/{cid}/concentration")
+async def concentration(request: Request, cid: int):
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        name, ch.concentration = ch.concentration, ""
+        session.commit()
+        resp = _partial(request, "partials/hud.html", ch)
+    return _toast(resp, f"Concentration on {name} ended" if name else "Not concentrating")
+
+
+# ----------------------------------------------------------------- inspiration: players spend it, the DM grants it
+@router.post("/c/{cid}/inspiration")
+async def inspiration(request: Request, cid: int):
+    form = await request.form()
+    op = str(form.get("op", "use"))
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        if op == "grant":
+            _require_dm(request)
+            ch.inspiration = True
+            text = "Inspiration granted"
+        elif op == "revoke":
+            _require_dm(request)
+            ch.inspiration = False
+            text = "Inspiration removed"
+        else:
+            if not ch.inspiration:
+                return _toast(_partial(request, "partials/hud.html", ch), "No inspiration to spend")
+            ch.inspiration = False
+            text = "Inspiration spent"
+        session.commit()
+        resp = _partial(request, "partials/hud.html", ch)
+    return _toast(resp, text)

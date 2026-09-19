@@ -2,8 +2,12 @@
 <section class="win" id="conditions">
   <div class="win-title">Conditions</div>
   <div class="win-body chips">
+    {% if is_dm %}
     {% for name in sheet.condition_names %}
     <button class="chip {% if name in sheet.conditions %}on{% endif %}" hx-post="/c/{{ ch.id }}/conditions" hx-vals='{"name": "{{ name }}"}' hx-target="#conditions" hx-swap="outerHTML" title="toggle">{{ name }}</button>
     {% endfor %}
+    {% else %}
+    {% for name in sheet.conditions %}<span class="chip warn">{{ name }}</span>{% else %}<span class="muted small">None. The DM sets these.</span>{% endfor %}
+    {% endif %}
   </div>
 </section>

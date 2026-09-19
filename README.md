@@ -24,11 +24,18 @@ connections - allow it on private networks.
 
 ## Play view and sheet
 
-Opening a character lands on the **play view**: the sheet as you need it at the table, read-only
-except for what changes mid-session - hit points, death saves, hit dice, rests, conditions,
-resource pips, spell slots and prepared spells, equipment and coins, session notes. Everything
-else (scores, proficiencies, features, spells known, backstory) is edited on the full sheet via
-**Edit sheet**.
+Opening a character lands on the **play view**: a HUD (hit points with damage/heal, AC,
+initiative, speed, passive perception, spell DC, inspiration, concentration, conditions) over
+tabs - Actions, Spells, Stats, Features, Equipment, Notes. Players change what changes at the
+table: damage and healing, hit dice and rests, resource pips, casting, preparing spells,
+equipment and coins, session notes. Everything else is edited on the full sheet via **Edit sheet**.
+
+**Cast** on a spell offers the slot levels that still have a slot (or the pact slot, or ritual
+for ritual spells), spends it, and puts concentration spells in the HUD with an "end" button.
+The full spell list sits under "All spells".
+
+Some things are the DM's to give, not the player's: inspiration (players can only spend it),
+conditions, XP and max hit points. The DM gets the extra controls on the same play view.
 
 Removing an item from the equipment list moves it to a **Removed** list underneath, with
 "put back" - so a potion drunk in error, or a sword the DM hands back, is one click.

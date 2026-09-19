@@ -1,0 +1,58 @@
+{% set ch = sheet.char %}
+<div class="hud" id="hud" {% if oob_hud %}hx-swap-oob="true"{% endif %}>
+  <div class="hud-hp {% if ch.hp_current == 0 %}down{% elif ch.hp_current * 4 <= ch.hp_max %}low{% endif %}">
+    <div class="hud-hp-num"><span class="hp-big">{{ ch.hp_current }}</span><span class="hp-max">/ {{ ch.hp_max }}</span>{% if ch.hp_temp %}<span class="hp-temp">+{{ ch.hp_temp }} temp</span>{% endif %}</div>
+    <div class="hpbar"><div class="hpbar-fill {% if ch.hp_current * 4 <= ch.hp_max %}low{% elif ch.hp_current * 2 <= ch.hp_max %}mid{% endif %}" style="width: {{ ((100 * ch.hp_current / ch.hp_max) if ch.hp_max else 0)|round|int }}%"></div></div>
+    <form class="hp-actions" hx-post="/c/{{ ch.id }}/hp" hx-target="#hud" hx-swap="outerHTML">
+      <input type="hidden" name="view" value="play">
+      <input type="number" name="amount" min="0" max="999" placeholder="0" inputmode="numeric">
+      <button name="action" value="damage" class="danger">Damage</button>
+      <button name="action" value="heal" class="good">Heal</button>
+      <button name="action" value="temp" class="ghost" title="set temporary HP">Temp</button>
+    </form>
+    {% if ch.hp_current == 0 %}
+    <form class="inline death" hx-post="/c/{{ ch.id }}/hp" hx-target="#hud" hx-swap="outerHTML">
+      <input type="hidden" name="view" value="play">
+      <span class="k">Death saves</span>
+      <button name="action" value="death_success" class="ghost">success {{ ch.death_success }}/3</button>
+      <button name="action" value="death_fail" class="danger">fail {{ ch.death_fail }}/3</button>
+      <button name="action" value="death_reset" class="link">reset</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="hud-stats">
+    <div><span class="k">AC</span><span class="v">{{ ch.ac }}</span></div>
+    <div><span class="k">Init</span><span class="v">{{ sheet.initiative|mod }}</span></div>
+    <div><span class="k">Speed</span><span class="v">{{ ch.speed }}</span></div>
+    <div><span class="k">Prof</span><span class="v">+{{ sheet.prof }}</span></div>
+    <div><span class="k">Passive</span><span class="v">{{ sheet.passive_perception }}</span></div>
+    {% if sheet.spellcasting and sheet.spellcasting.dc %}<div><span class="k">Spell DC</span><span class="v">{{ sheet.spellcasting.dc }}</span></div><div><span class="k">Spell atk</span><span class="v">{{ sheet.spellcasting.attack|mod }}</span></div>{% endif %}
+  </div>
+  <div class="hud-state">
+    <span class="state">
+      <span class="k">Inspiration</span>
+      {% if ch.inspiration %}
+      <span class="token on" title="you have inspiration"></span>
+      <button class="link" hx-post="/c/{{ ch.id }}/inspiration" hx-vals='{"op": "use"}' hx-target="#hud" hx-swap="outerHTML">spend</button>
+      {% if is_dm %}<button class="link muted" hx-post="/c/{{ ch.id }}/inspiration" hx-vals='{"op": "revoke"}' hx-target="#hud" hx-swap="outerHTML">revoke</button>{% endif %}
+      {% else %}
+      <span class="token" title="none - the DM grants it"></span>
+      {% if is_dm %}<button class="link" hx-post="/c/{{ ch.id }}/inspiration" hx-vals='{"op": "grant"}' hx-target="#hud" hx-swap="outerHTML">grant</button>{% else %}<span class="muted small">none</span>{% endif %}
+      {% endif %}
+    </span>
+    {% if ch.concentration %}
+    <span class="state conc">
+      <span class="k">Concentrating</span> <b>{{ ch.concentration }}</b>
+      <button class="link" hx-post="/c/{{ ch.id }}/concentration" hx-target="#hud" hx-swap="outerHTML">end</button>
+    </span>
+    {% endif %}
+    <span class="state conditions">
+      <span class="k">Conditions</span>
+      {% if is_dm %}
+        {% for name in sheet.condition_names %}<button class="chip {% if name in sheet.conditions %}on{% endif %}" hx-post="/c/{{ ch.id }}/conditions" hx-vals='{"name": "{{ name }}", "view": "play"}' hx-target="#hud" hx-swap="outerHTML">{{ name }}</button>{% endfor %}
+      {% elif sheet.conditions %}
+        {% for name in sheet.conditions %}<a class="chip warn" href="/compendium/conditions#{{ name|lower }}" title="what this does">{{ name }}</a>{% endfor %}
+      {% else %}<span class="muted small">none</span>{% endif %}
+    </span>
+  </div>
+</div>

@@ -3,7 +3,7 @@
 {% block title %}{{ ch.name }} - Artificer's Manual{% endblock %}
 {% block main_class %}wide{% endblock %}
 {% block content %}
-<div class="sheet play" id="sheet">
+<div class="sheet play" id="sheet" data-cid="{{ ch.id }}">
 
 <div class="play-head">
   <div>
@@ -13,42 +13,84 @@
       {{ sheet.cls.name if sheet.cls else 'No class' }}{% if sheet.sub %} ({{ sheet.sub.name }}){% endif %} {{ ch.level }}
       {% if sheet.bg %} &middot; {{ sheet.bg.name }}{% endif %}
       {% if ch.player %} &middot; {{ ch.player }}{% endif %}
-      {% if ch.alignment %} &middot; {{ ch.alignment }}{% endif %}
     </div>
   </div>
   <a class="btn ghost-btn" href="/c/{{ ch.id }}/sheet">Edit sheet</a>
 </div>
 
-<div class="strip play-strip">
-  <div><span class="k">AC</span><span class="v">{{ ch.ac }}</span></div>
-  <div><span class="k">Initiative</span><span class="v">{{ sheet.initiative|mod }}</span></div>
-  <div><span class="k">Speed</span><span class="v">{{ ch.speed }}</span></div>
-  <div><span class="k">Proficiency</span><span class="v">+{{ sheet.prof }}</span></div>
-  <div><span class="k">Passive Perc.</span><span class="v">{{ sheet.passive_perception }}</span></div>
-  {% if sheet.spellcasting and sheet.spellcasting.dc %}
-  <div><span class="k">Spell DC</span><span class="v">{{ sheet.spellcasting.dc }}</span></div>
-  <div><span class="k">Spell attack</span><span class="v">{{ sheet.spellcasting.attack|mod }}</span></div>
-  {% endif %}
-  {% if ch.inspiration %}<div><span class="k">Inspiration</span><span class="v">yes</span></div>{% endif %}
+{% include "partials/hud.html" %}
+
+<nav class="tabs" id="tabs">
+  <button data-tab="actions" class="on">Actions</button>
+  {% if sheet.spellcasting %}<button data-tab="spells">Spells</button>{% endif %}
+  <button data-tab="stats">Stats</button>
+  <button data-tab="features">Features</button>
+  <button data-tab="gear">Equipment</button>
+  <button data-tab="notes">Notes</button>
+</nav>
+
+<div class="tab-pane on" data-pane="actions">
+  <div class="two-col">
+    <div>
+      {% include "partials/attacks.html" %}
+      {% include "partials/counters.html" %}
+    </div>
+    <div>
+      <section class="win">
+        <div class="win-title">Rest &amp; recovery</div>
+        <div class="win-body hp-foot">
+          {% if sheet.hit_die %}
+          <form class="inline" hx-post="/c/{{ ch.id }}/hp" hx-target="#hud" hx-swap="outerHTML">
+            <input type="hidden" name="action" value="hit_die"><input type="hidden" name="view" value="play">
+            <span class="k">Hit dice</span>
+            <button name="delta" value="1" class="ghost">spend d{{ sheet.hit_die }} ({{ sheet.hit_dice_left }}/{{ ch.level }} left)</button>
+            <button name="delta" value="-1" class="link">undo</button>
+          </form>
+          {% endif %}
+          <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none">
+            <input type="hidden" name="kind" value="short">
+            <button class="ghost">Short rest</button>
+            <span class="muted small">pact slots and short-rest resources back</span>
+          </form>
+          <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none" hx-confirm="Long rest: full HP, all slots and resources back, half your hit dice back?">
+            <input type="hidden" name="kind" value="long">
+            <button class="ghost">Long rest</button>
+          </form>
+        </div>
+      </section>
+      {% if ch.features_custom %}
+      <section class="win">
+        <div class="win-title">Player notes on abilities</div>
+        <div class="win-body prose small">{{ ch.features_custom }}</div>
+      </section>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
-<div class="sheet-grid">
-  <div class="col">
+{% if sheet.spellcasting %}
+<div class="tab-pane" data-pane="spells">
+  <section class="win">
+    <div class="win-title">Spellcasting <span class="muted small">Cast spends the slot; concentration shows in the bar above</span></div>
+    <div class="win-body">
+      {% include "partials/spells_play.html" %}
+    </div>
+  </section>
+</div>
+{% endif %}
+
+<div class="tab-pane" data-pane="stats">
+  <div class="stats-grid">
     <section class="win">
       <div class="win-title">Abilities</div>
       <div class="win-body">
         <div class="abilities ro">
           {% for ab in ABILITIES %}
-          <div class="ability">
-            <span class="ability-name">{{ ab|upper }}</span>
-            <span class="mod">{{ sheet.mods[ab]|mod }}</span>
-            <span class="score">{{ sheet.scores[ab] }}</span>
-          </div>
+          <div class="ability"><span class="ability-name">{{ ab|upper }}</span><span class="mod">{{ sheet.mods[ab]|mod }}</span><span class="score">{{ sheet.scores[ab] }}</span></div>
           {% endfor %}
         </div>
       </div>
     </section>
-
     <section class="win">
       <div class="win-title">Saving throws</div>
       <div class="win-body rows">
@@ -57,16 +99,14 @@
         {% endfor %}
       </div>
     </section>
-
-    <section class="win">
+    <section class="win skills-win">
       <div class="win-title">Skills</div>
-      <div class="win-body rows">
+      <div class="win-body rows two">
         {% for s in sheet.skills %}
         <div class="row ro"><span class="dot {% if s.expertise %}on double{% elif s.prof %}on{% endif %}"></span><span class="row-name">{{ s.name }} <small class="muted">{{ s.ability }}</small></span><span class="row-val">{{ s.total|mod }}</span></div>
         {% endfor %}
       </div>
     </section>
-
     {% if ch.other_profs %}
     <section class="win">
       <div class="win-title">Proficiencies &amp; languages</div>
@@ -74,52 +114,52 @@
     </section>
     {% endif %}
   </div>
+</div>
 
-  <div class="col">
-    <section class="win">
-      <div class="win-title">Hit points</div>
-      {% include "partials/hp.html" %}
-    </section>
+<div class="tab-pane" data-pane="features">
+  {% include "partials/features.html" %}
+</div>
 
-    {% include "partials/conditions.html" %}
-    {% include "partials/counters.html" %}
-    {% include "partials/attacks.html" %}
+<div class="tab-pane" data-pane="gear">
+  {% include "partials/inventory.html" %}
+</div>
 
-    {% if sheet.spellcasting %}
-    <section class="win">
-      <div class="win-title">Spellcasting</div>
-      <div class="win-body">
-        {% include "partials/spellcasting.html" %}
-        {% include "partials/spells.html" %}
-      </div>
-    </section>
-    {% endif %}
-  </div>
-
-  <div class="col">
+<div class="tab-pane" data-pane="notes">
+  <div class="two-col">
     <section class="win">
       <div class="win-title">Session notes</div>
       <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
-        <textarea name="notes" rows="7" placeholder="What happened, who you met, what you owe">{{ ch.notes }}</textarea>
+        <textarea name="notes" rows="14" placeholder="What happened, who you met, what you owe">{{ ch.notes }}</textarea>
       </form>
     </section>
-
-    {% include "partials/inventory.html" %}
-    {% include "partials/features.html" %}
-
-    {% if ch.features_custom or ch.personality or ch.backstory or ch.allies or ch.appearance %}
     <section class="win">
-      <div class="win-title">About</div>
+      <div class="win-title">About {{ ch.name }}</div>
       <div class="win-body">
         {% if ch.appearance %}<p class="small">{{ ch.appearance }}</p>{% endif %}
-        {% if ch.features_custom %}<details class="feat"><summary>Other features &amp; notes</summary><div class="feat-body prose">{{ ch.features_custom }}</div></details>{% endif %}
         {% if ch.personality %}<details class="feat"><summary>Personality</summary><div class="feat-body prose">{{ ch.personality }}</div></details>{% endif %}
         {% if ch.backstory %}<details class="feat"><summary>Backstory</summary><div class="feat-body prose">{{ ch.backstory }}</div></details>{% endif %}
         {% if ch.allies %}<details class="feat"><summary>Allies &amp; organisations</summary><div class="feat-body prose">{{ ch.allies }}</div></details>{% endif %}
+        {% if not (ch.appearance or ch.personality or ch.backstory or ch.allies) %}<p class="muted small">Nothing written yet - fill it in on the sheet.</p>{% endif %}
       </div>
     </section>
-    {% endif %}
   </div>
 </div>
+
 </div>
+<script>
+  (function () {
+    var root = document.getElementById("sheet"), key = "am-tab-" + root.dataset.cid;
+    function show(name) {
+      var found = false;
+      root.querySelectorAll(".tab-pane").forEach(function (p) { var on = p.dataset.pane === name; p.classList.toggle("on", on); found = found || on; });
+      if (!found) { return show("actions"); }
+      root.querySelectorAll("#tabs [data-tab]").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === name); });
+      try { localStorage.setItem(key, name); } catch (e) {}
+    }
+    root.querySelectorAll("#tabs [data-tab]").forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.tab); }); });
+    var saved = null;
+    try { saved = localStorage.getItem(key); } catch (e) {}
+    if (saved) { show(saved); }
+  })();
+</script>
 {% endblock %}

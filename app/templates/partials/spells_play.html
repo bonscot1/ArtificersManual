@@ -1,0 +1,43 @@
+{% set ch = sheet.char %}
+{% set sc = sheet.spellcasting %}
+<div id="spells-play">
+  {% if oob_hud %}{% include "partials/hud.html" %}{% endif %}
+  {% set oob = false %}
+  {% include "partials/spellcasting.html" %}
+  <div class="ready">
+    {% for level, rows in sheet.ready_levels.items() %}
+    <div class="spell-level">
+      <div class="spell-level-head">{{ 'Cantrips' if level == 0 else level|ordinal ~ ' level' }}</div>
+      {% for r in rows %}
+      {% set sp = r.spell %}
+      <details class="spell ready-row">
+        <summary>
+          <span class="cast-area">
+            {% if level == 0 %}
+            <button class="cast" hx-post="/c/{{ ch.id }}/cast" hx-vals='{"key": {{ r.key|tojson }}, "slot": "cantrip"}' hx-target="#spells-play" hx-swap="outerHTML" onclick="event.stopPropagation()">Cast</button>
+            {% else %}
+            <button class="cast" hx-get="/c/{{ ch.id }}/cast-options?key={{ r.key|urlencode }}" hx-target="closest .cast-area" hx-swap="innerHTML" onclick="event.stopPropagation()">Cast</button>
+            {% endif %}
+          </span>
+          <span class="spell-name">{{ sp.name }}</span>
+          <span class="muted small">{{ sp|spell_time }} &middot; {{ sp|spell_range }}{% for f in sp|spell_flags %} &middot; <span class="flag">{{ f }}</span>{% endfor %}{% if r.always %} &middot; always{% endif %}</span>
+        </summary>
+        <div class="spell-body">
+          <p class="muted small">{{ sp|spell_level_label }} &middot; {{ sp|spell_components }} &middot; {{ sp|spell_duration }}</p>
+          {{ sp.entries|entries }}
+          {% if sp.entriesHigherLevel %}{{ sp.entriesHigherLevel|entries }}{% endif %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted small">Nothing ready to cast{% if sc.prepares %} - prepare spells in the full list below{% else %} - add spells on the sheet{% endif %}.</p>
+    {% endfor %}
+  </div>
+  <details class="all-spells">
+    <summary>All spells ({{ sheet.spell_total }}){% if sc.prepares %} <span class="muted small">tick to prepare after a long rest</span>{% endif %}</summary>
+    {% set view = 'play' %}
+    {% set readonly = true %}
+    {% include "partials/spells.html" %}
+  </details>
+</div>

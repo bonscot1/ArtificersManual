@@ -11,7 +11,7 @@
         {% if r.always %}
         <span class="chip always" title="always prepared - does not count against your prepared spells">always</span>
         {% elif sc.prepares and level > 0 %}
-        <input type="checkbox" {% if r.prepared %}checked{% endif %} title="prepared" hx-post="/c/{{ ch.id }}/spells" hx-vals='{"op": "prepare", "key": {{ r.key|tojson }}, "view": {{ (view or 'sheet')|tojson }}}' hx-target="#spells" hx-swap="outerHTML" onclick="event.stopPropagation()">
+        <input type="checkbox" {% if r.prepared %}checked{% endif %} title="prepared" hx-post="/c/{{ ch.id }}/spells" hx-vals='{"op": "prepare", "key": {{ r.key|tojson }}, "view": {{ (view or 'sheet')|tojson }}}' hx-target="{{ '#spells-play' if view == 'play' else '#spells' }}" hx-swap="outerHTML" onclick="event.stopPropagation()">
         {% endif %}
         <span class="spell-name">{{ sp.name }}</span>
         <span class="muted small">{{ sp|spell_time }} &middot; {{ sp|spell_range }}{% for f in sp|spell_flags %} &middot; {{ f }}{% endfor %}</span>

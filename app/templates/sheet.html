@@ -44,7 +44,7 @@
       </select>
     </label>
     <label>Alignment <input name="alignment" value="{{ ch.alignment }}" maxlength="40"></label>
-    <label>XP <input type="number" name="xp" value="{{ ch.xp }}" min="0"></label>
+    <label>XP <input type="number" name="xp" value="{{ ch.xp }}" min="0" {% if not is_dm %}disabled title="the DM awards XP"{% endif %}></label>
     <label class="name">Appearance <input name="appearance" value="{{ ch.appearance }}" maxlength="300" placeholder="age, height, weight, eyes, skin, hair"></label>
   </div>
 </form>
@@ -103,7 +103,7 @@
         <label class="stat"><span>Speed</span><input type="number" name="speed" value="{{ ch.speed }}" min="0" max="999"></label>
         <label class="stat"><span>Init bonus</span><input type="number" name="initiative_bonus" value="{{ ch.initiative_bonus }}" min="-20" max="20"></label>
         <label class="stat"><span>Max HP</span><input type="number" name="hp_max" value="{{ ch.hp_max }}" min="1" max="9999"></label>
-        <label class="check"><input type="checkbox" name="inspiration" {% if ch.inspiration %}checked{% endif %}> Inspiration</label>
+        {% if is_dm %}<label class="check"><input type="checkbox" name="inspiration" {% if ch.inspiration %}checked{% endif %}> Inspiration</label>{% else %}<span class="muted small self-end">Inspiration: {{ 'yes' if ch.inspiration else 'no' }} (DM grants it)</span>{% endif %}
       </form>
       {% include "partials/hp.html" %}
     </section>

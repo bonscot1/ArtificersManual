@@ -1,0 +1,12 @@
+{% if open %}
+<span class="cast-options">
+  {% for o in options %}
+  <button class="cast-opt" hx-post="/c/{{ char.id }}/cast" hx-vals='{"key": {{ row.key|tojson }}, "slot": {{ o.slot|tojson }}}' hx-target="#spells-play" hx-swap="outerHTML" onclick="event.stopPropagation()">{{ o.label }}</button>
+  {% else %}
+  <span class="muted small">no slot left</span>
+  {% endfor %}
+  <button class="link" hx-get="/c/{{ char.id }}/cast-options?key={{ row.key|urlencode }}&cancel=1" hx-target="closest .cast-area" hx-swap="innerHTML" onclick="event.stopPropagation()">cancel</button>
+</span>
+{% else %}
+<button class="cast" hx-get="/c/{{ char.id }}/cast-options?key={{ row.key|urlencode }}" hx-target="closest .cast-area" hx-swap="innerHTML" onclick="event.stopPropagation()">Cast</button>
+{% endif %}

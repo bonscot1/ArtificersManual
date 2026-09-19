@@ -57,6 +57,7 @@ class Character(Base):
     conditions: Mapped[list] = mapped_column(JSON, default=list)       # ["Prone", ...]
 
     slots_used: Mapped[dict] = mapped_column(JSON, default=dict)       # {"1": 2, "2": 0}
+    concentration: Mapped[str] = mapped_column(String(120), default="")   # spell being concentrated on
     pact_used: Mapped[int] = mapped_column(Integer, default=0)
     spells: Mapped[list] = mapped_column(JSON, default=list)           # [{"key": "Fireball|PHB", "prepared": true}]
     attacks: Mapped[list] = mapped_column(JSON, default=list)          # [{"name","bonus","damage","notes"}]
