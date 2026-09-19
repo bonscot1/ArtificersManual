@@ -6,13 +6,25 @@ pulled from the enabled books for that race/class/subclass/background.
 """
 from __future__ import annotations
 
+import re
+
 from .compendium import format as fmt
 from .compendium import rules
-from .compendium.loader import Compendium
+from .compendium.loader import Compendium, entity_url
 from .db import Character
 
 # race entries that describe rather than grant something
 _RACE_FLUFF = {"Age", "Alignment", "Size", "Languages", "Speed", "Creature Type", "Life Span"}
+
+# 5etools optional-feature type codes -> what the sheet calls them
+OPTION_TYPES = {
+    "AI": "Infusion", "EI": "Eldritch Invocation", "MM": "Metamagic", "MV:B": "Maneuver",
+    "MV:C2-UA": "Maneuver", "FS:F": "Fighting Style", "FS:R": "Fighting Style", "FS:P": "Fighting Style",
+    "FS:B": "Fighting Style", "ED": "Elemental Discipline", "AS": "Arcane Shot", "AS:V1-UA": "Arcane Shot",
+    "AS:V2-UA": "Arcane Shot", "RN": "Rune", "PB": "Pact Boon", "OTH": "Other", "AF": "Alchemical Formula",
+    "OR": "Onomancy Resonant", "RP": "Rune", "TT": "Tactic", "PS": "Psionic Power", "SHP:H": "Ship Upgrade",
+    "VEH": "Vehicle Upgrade",
+}
 
 
 def build_sheet(ch: Character, c: Compendium) -> dict:
@@ -67,7 +79,29 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
         spell_levels.setdefault(r["level"], []).append(r)
 
     hit_die = (cls or {}).get("hd", {}).get("faces")
+    feat_rows = _pick_rows(ch.feats, c.feats)
+    option_rows = _pick_rows(ch.options, c.optionalfeatures)
+    option_types = _option_types(cls, sub, ch.level)
+    for row in option_rows:
+        codes = row["entity"].get("featureType", []) if row["entity"] else []
+        row["type"] = next((OPTION_TYPES.get(code, code) for code in codes), "Option")
+    counters = [{"name": x.get("name", ""), "max": max(0, int(x.get("max", 0) or 0)),
+                 "used": max(0, min(int(x.get("max", 0) or 0), int(x.get("used", 0) or 0))),
+                 "reset": x.get("reset", "long")} for x in (ch.counters or [])]
+    inventory_links = {}
+    for i, row in enumerate(ch.inventory or []):
+        wanted = _item_name(row.get("name", ""))
+        item = c.find("item", wanted) or c.find("item", wanted.rstrip("s"))
+        if item:
+            inventory_links[i] = entity_url("item", item)
     return {
+        "inventory_links": inventory_links,
+        "feats": feat_rows,
+        "options": option_rows,
+        "option_types": option_types,
+        "option_type_codes": sorted({code for t in option_types for code in t["codes"]}),
+        "class_table": class_table_values(cls, sub, ch.level),
+        "counters": counters,
         "char": ch,
         "scores": scores,
         "mods": mods,
@@ -148,3 +182,65 @@ def _spellcasting(ch: Character, cls: dict | None, sub: dict | None, mods: dict,
 def default_hp(cls: dict | None, level: int, con_mod: int) -> int:
     faces = (cls or {}).get("hd", {}).get("faces", 8)
     return rules.default_max_hp(faces, level, con_mod)
+
+
+def _pick_rows(picks: list | None, store: dict) -> list[dict]:
+    rows = []
+    for i, pick in enumerate(picks or []):
+        entity = store.get(pick.get("key", ""))
+        rows.append({"idx": i, "key": pick.get("key", ""), "note": pick.get("note", ""), "entity": entity,
+                     "name": entity["name"] if entity else pick.get("key", "").split("|")[0]})
+    return rows
+
+
+def _option_types(cls: dict | None, sub: dict | None, level: int) -> list[dict]:
+    """Which class options this character picks from, and how many they know at this level."""
+    out = []
+    for entry in (cls, sub):
+        for prog in (entry or {}).get("optionalfeatureProgression", []) or []:
+            codes = prog.get("featureType", [])
+            progression = prog.get("progression")
+            known = None
+            if isinstance(progression, list):
+                known = int(progression[max(1, min(20, level)) - 1])
+            elif isinstance(progression, dict):
+                reached = [int(v) for k, v in progression.items() if str(k).isdigit() and int(k) <= level]
+                known = reached[-1] if reached else 0
+            if known:
+                out.append({"name": prog.get("name") or OPTION_TYPES.get(codes[0] if codes else "", "Options"),
+                            "codes": codes, "known": known})
+    return out
+
+
+def class_table_values(cls: dict | None, sub: dict | None, level: int) -> list[tuple[str, str]]:
+    """The class table's non-slot columns at this level: Rages 2, Rage Damage +2, Infused Items 2..."""
+    out = []
+    groups = list((cls or {}).get("classTableGroups") or [])
+    if sub:
+        groups += list(sub.get("subclassTableGroups") or [])
+    for g in groups:
+        if "rowsSpellProgression" in g or not g.get("rows"):
+            continue
+        labels = [rules.strip_tags(x) for x in g.get("colLabels", [])]
+        row = g["rows"][max(1, min(20, level)) - 1]
+        for label, value in zip(labels, row):
+            if label in ("Slot Level", "Spell Slots"):
+                continue
+            if isinstance(value, dict):
+                text = str(value.get("value", ""))
+                if value.get("type") == "bonus" and text.lstrip("-").isdigit():
+                    text = f"+{text}" if not text.startswith("-") else text
+                elif value.get("type") == "bonusSpeed":
+                    text = f"+{text} ft."
+            else:
+                text = rules.strip_tags(str(value))
+            if text not in ("", "0", "-"):
+                out.append((label, text))
+    return out
+
+
+def _item_name(text: str) -> str:
+    """'Hand Axe (x2)' / '2 x Javelin' / 'Belt of Dwarven Kind' -> something the books might know."""
+    name = re.sub(r"\(.*?\)", "", text)
+    name = re.sub(r"^\d+\s*[x×]\s*", "", name, flags=re.I).strip()
+    return name.replace("Dwarven Kind", "Dwarvenkind").replace("Hand Axe", "Handaxe")

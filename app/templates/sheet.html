@@ -45,6 +45,7 @@
     </label>
     <label>Alignment <input name="alignment" value="{{ ch.alignment }}" maxlength="40"></label>
     <label>XP <input type="number" name="xp" value="{{ ch.xp }}" min="0"></label>
+    <label class="name">Appearance <input name="appearance" value="{{ ch.appearance }}" maxlength="300" placeholder="age, height, weight, eyes, skin, hair"></label>
   </div>
 </form>
 
@@ -108,6 +109,7 @@
     </section>
 
     {% include "partials/conditions.html" %}
+    {% include "partials/counters.html" %}
     {% include "partials/attacks.html" %}
 
     {% if sheet.spellcasting %}
@@ -136,8 +138,10 @@
     <section class="win">
       <div class="win-title">Notes</div>
       <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
-        <textarea name="notes" rows="6" placeholder="Session notes, contacts, loose ends">{{ ch.notes }}</textarea>
-        <textarea name="backstory" rows="6" placeholder="Backstory, personality, ideals, bonds, flaws">{{ ch.backstory }}</textarea>
+        <textarea name="notes" rows="5" placeholder="Session notes, loose ends">{{ ch.notes }}</textarea>
+        <textarea name="personality" rows="5" placeholder="Personality traits, ideals, bonds, flaws">{{ ch.personality }}</textarea>
+        <textarea name="backstory" rows="8" placeholder="Backstory">{{ ch.backstory }}</textarea>
+        <textarea name="allies" rows="4" placeholder="Allies, organisations, enemies">{{ ch.allies }}</textarea>
       </form>
     </section>
 

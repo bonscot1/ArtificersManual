@@ -1,0 +1,12 @@
+{% if not results %}<p class="muted small">Nothing matches.</p>{% endif %}
+<ul class="results">
+  {% for e in results %}
+  {% set k = e|ekey %}
+  <li>
+    <button class="link add" hx-post="/c/{{ char.id }}/picks" hx-vals='{"kind": {{ kind|tojson }}, "op": "add", "key": {{ k|tojson }}}' hx-target="#features" hx-swap="outerHTML" {% if kind == 'feat' and k in have %}disabled{% endif %}>{{ 'added' if kind == 'feat' and k in have else 'add' }}</button>
+    <span class="spell-name">{{ e.name }}</span>
+    <span class="muted small">{{ e.source }}{% if e.prerequisite %} &middot; {{ e.prerequisite|prereq|truncate(70) }}{% endif %}</span>
+    <a class="small" href="{{ entity_url(store_kind, e) }}" target="_blank">details</a>
+  </li>
+  {% endfor %}
+</ul>

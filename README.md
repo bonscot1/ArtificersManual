@@ -4,7 +4,9 @@ A character tracker for one D&D 5e (2014) table. Runs on the DM's machine; playe
 sheet in a browser, the DM sees the whole party and keeps private notes on each character.
 
 Pick a race, class, subclass and background and the sheet fills itself in from the books:
-traits, class features by level, spell slots, save DC, the class's spell list, weapon stats.
+traits, class features by level, spell slots, save DC, the class's spell list, weapon stats,
+feats, class options (infusions, invocations, fighting styles...) and the class table's numbers
+(rages, ki, infused items). Resource counters track uses per rest.
 
 ## First run
 
@@ -48,21 +50,40 @@ winget install Cloudflare.cloudflared       # once
 The URL changes every time you start the tunnel; paste it in your group chat at the start of the
 session. Set the passwords first.
 
+## Importing a character sheet
+
+Players who fill in the official (WotC) fillable PDF can be imported in one go - scores, ticks,
+spells (with prepared marks), attacks, equipment, coins, personality, backstory:
+
+```powershell
+.venv\Scripts\python scripts\import_sheet.py "E:\DnD\Characters\Iron Wavebreaker\Iron Wavebreaker.pdf" `
+    --race "Tortle|MPMM" --option "Replicate Magic Item|TCE:Bag of Holding" --option "Homunculus Servant|TCE" `
+    --dm-notes "E:\DnD\Characters\Iron Wavebreaker\IronWavebreaker_Hidden_Backstory_DM_ONLY.md"
+```
+
+Names on the sheet are matched against the enabled books; `--dry-run` shows what it found and
+warns about anything it couldn't place. Pin the rest with `--race`, `--class`, `--subclass`,
+`--background`, `--level`, `--feat`, `--option` (`"Key|SRC:note"`), `--counter "Rage:2:long"`.
+`--replace` updates a character that already exists. DM notes never leave this machine's database.
+
 ## Books
 
 `sources` in `settings.json` lists the books whose content is switched on, by 5etools code.
-Start with the Player's Handbook; add expansions as your table allows them:
+The default is this table's set - PHB, XGE, TCE, SCAG, MPMM, VGM, TTP, BGG - and the order
+decides which printing a bare name means ("Goliath" is the Multiverse one, not Volo's).
+Magic items load from every book regardless, so loot from the DMG is always there.
 
 | code | book |
 | --- | --- |
 | PHB | Player's Handbook (2014) - always on |
 | XGE | Xanathar's Guide to Everything |
-| TCE | Tasha's Cauldron of Everything (Artificer lives here) |
-| MPMM | Monsters of the Multiverse (Tortle, Goliath, ... 2022 versions) |
-| VGM | Volo's Guide to Monsters (Goliath 2016 version) |
+| TCE | Tasha's Cauldron of Everything (Artificer, infusions) |
+| SCAG | Sword Coast Adventurer's Guide (Clan Crafter) |
+| MPMM | Monsters of the Multiverse (Tortle, Goliath - 2022 versions) |
+| VGM | Volo's Guide to Monsters (Goliath - 2016 version) |
 | TTP | The Tortle Package |
+| BGG | Bigby Presents: Glory of the Giants (Giant Foundling, Strike of the Giants) |
 | ERLW | Eberron: Rising from the Last War |
-| SCAG | Sword Coast Adventurer's Guide |
 | MTF | Mordenkainen's Tome of Foes |
 | EGW | Explorer's Guide to Wildemount |
 
@@ -84,7 +105,7 @@ app/                FastAPI app
   db.py             SQLite model (one table: characters)
 data/5etools/       downloaded rules data (gitignored)
 data/manual.db      your characters (gitignored - back this file up)
-scripts/            fetch_data.py
+scripts/            fetch_data.py, import_sheet.py
 tests/              pytest; `.venv\Scripts\python -m pytest`
 ```
 

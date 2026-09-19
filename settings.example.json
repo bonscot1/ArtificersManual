@@ -1,5 +1,5 @@
 {
-  "sources": ["PHB"],
+  "sources": ["PHB", "XGE", "TCE", "SCAG", "MPMM", "VGM", "TTP", "BGG"],
   "table_password": "",
   "dm_password": "",
   "host": "0.0.0.0",

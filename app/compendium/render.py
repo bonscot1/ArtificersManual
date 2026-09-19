@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 # tag -> (compendium kind, default source). Rendered as a link when the target exists.
 LINKED_TAGS = {
     "spell": ("spell", "PHB"),
-    "item": ("item", "PHB"),
+    "item": ("item", "DMG"),
     "condition": ("condition", "PHB"),
     "race": ("race", "PHB"),
     "class": ("class", "PHB"),

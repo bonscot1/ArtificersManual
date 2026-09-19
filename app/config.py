@@ -13,9 +13,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_SETTINGS_FILE = BASE_DIR / "settings.json"
 
-# The 2014 core rules. Add expansion codes (TCE, XGE, MPMM, TTP, VGM, ERLW...)
-# to `sources` in settings.json to unlock their races, subclasses and spells.
-DEFAULT_SOURCES = ["PHB"]
+# The books this table allows, by 5etools code, in the order a bare name should
+# resolve ("Tortle" -> MPMM before TTP). Override with `sources` in settings.json.
+# PHB is always on; magic items load from every book regardless.
+DEFAULT_SOURCES = ["PHB", "XGE", "TCE", "SCAG", "MPMM", "VGM", "TTP", "BGG"]
 
 
 @dataclass

@@ -20,6 +20,9 @@ KIND_PATHS = {
     "optionalfeature": "optional-features",
 }
 
+# the 2024 rules: never loaded, even for items
+SOURCES_2024 = {"XPHB", "XDMG", "XMM", "XSCREEN"}
+
 # subrace keys that never merge into the race
 _SUBRACE_SKIP = {
     "raceName", "raceSource", "name", "source", "page", "srd", "basicRules", "reprintedAs",
@@ -34,6 +37,11 @@ def key(name: str, source: str) -> str:
 
 def entity_url(kind: str, entity: dict) -> str:
     return f"/compendium/{KIND_PATHS[kind]}/{quote(key(entity['name'], entity['source']), safe='')}"
+
+
+def norm_name(name: str) -> str:
+    """Lookup key: case and apostrophes don't matter ("Tinkers Tools" finds "Tinker's Tools")."""
+    return str(name).strip().lower().replace("’", "").replace("'", "")
 
 
 def _as_list(x) -> list:
@@ -143,6 +151,49 @@ def resolve_copies(entries: list[dict], match_keys: tuple[str, ...]) -> list[dic
     return [resolve(e) for e in entries]
 
 
+def expand_versions(entries: list[dict]) -> list[dict]:
+    """Add each `_versions` variant as its own entry ("Strike of the Giants; Hill")."""
+    out = []
+    for e in entries:
+        versions = e.pop("_versions", None) if isinstance(e, dict) else None
+        out.append(e)
+        for v in versions or []:
+            if "_template" in v or "_implementations" in v or "_abstract" in v:
+                template = v.get("_template") or v.get("_abstract") or {}
+                impls = v.get("_implementations") or []
+            else:
+                template, impls = {}, [v]
+            for impl in impls:
+                spec = {**template, **impl}
+                variables = spec.pop("_variables", {}) or {}
+                merged = copy.deepcopy(e)
+                for k, val in spec.items():
+                    if k not in ("_mod", "_preserve"):
+                        merged[k] = copy.deepcopy(val)
+                for prop, ops in (spec.get("_mod") or {}).items():
+                    if prop == "*":
+                        continue
+                    for op in _as_list(ops):
+                        _apply_op(merged, prop, _fill_variables(op, variables))
+                merged["_version_of"] = e.get("name")
+                out.append(merged)
+    return out
+
+
+def _fill_variables(node, variables: dict):
+    if not variables:
+        return node
+    if isinstance(node, str):
+        for k, v in variables.items():
+            node = node.replace("{{" + k + "}}", str(v))
+        return node
+    if isinstance(node, list):
+        return [_fill_variables(x, variables) for x in node]
+    if isinstance(node, dict):
+        return {k: _fill_variables(v, variables) for k, v in node.items()}
+    return node
+
+
 # --------------------------------------------------------------------- refs
 def parse_class_ref(ref: str) -> tuple[str, str, str, int, str]:
     """'Second Wind|Fighter||1' -> (name, class, class source, level, feature source)."""
@@ -185,6 +236,7 @@ class Compendium:
     def __init__(self, data_dir: Path, sources: list[str]):
         self.data_dir = Path(data_dir)
         self.sources = set(sources)
+        self.source_order = list(sources)
         self.races: dict[str, dict] = {}
         self.subraces: dict[str, list[dict]] = {}
         self.classes: dict[str, dict] = {}
@@ -211,7 +263,7 @@ class Compendium:
     def _register(self, kind: str, entity: dict, store: dict[str, dict]) -> None:
         k = key(entity["name"], entity["source"])
         store[k] = entity
-        self._by_name.setdefault(kind, {}).setdefault(entity["name"].lower(), {})[entity["source"]] = k
+        self._by_name.setdefault(kind, {}).setdefault(norm_name(entity["name"]), {})[entity["source"]] = k
 
     def _enabled(self, e: dict) -> bool:
         return e.get("source") in self.sources
@@ -229,7 +281,7 @@ class Compendium:
             data = self._read(rel)
             if not data:
                 continue
-            for e in resolve_copies(data.get(prop, []), ("name", "source")):
+            for e in expand_versions(resolve_copies(data.get(prop, []), ("name", "source"))):
                 if self._enabled(e):
                     self._register(kind, e, store)
         self._load_items()
@@ -238,7 +290,7 @@ class Compendium:
         data = self._read("races.json")
         if not data:
             return
-        races = resolve_copies(data.get("race", []), ("name", "source"))
+        races = expand_versions(resolve_copies(data.get("race", []), ("name", "source")))
         subraces = resolve_copies(data.get("subrace", []), ("name", "source", "raceName", "raceSource"))
         for r in races:
             if self._enabled(r):
@@ -302,16 +354,20 @@ class Compendium:
             sp["_classes"] = classes
             sp["_subclasses"] = subclasses
 
+    def _item_ok(self, it: dict) -> bool:
+        """Loot comes from any book the DM likes, so items ignore `sources` (bar the 2024 rules)."""
+        return it.get("source") not in SOURCES_2024 and it.get("edition") != "one"
+
     def _load_items(self) -> None:
         base = self._read("items-base.json") or {}
         for it in base.get("baseitem", []):
-            if self._enabled(it):
+            if self._item_ok(it):
                 self._register("item", it, self.items)
         self.item_properties = {p["abbreviation"]: p for p in base.get("itemProperty", []) if p.get("source") == "PHB"}
         self.item_types = {t["abbreviation"]: t for t in base.get("itemType", [])}
         items = self._read("items.json") or {}
-        for it in items.get("item", []):
-            if self._enabled(it):
+        for it in resolve_copies(items.get("item", []), ("name", "source")):
+            if self._item_ok(it):
                 self._register("item", it, self.items)
 
     # ---------------------------------------------------------------- lookups
@@ -324,7 +380,7 @@ class Compendium:
 
     def find(self, kind: str, name: str, source: str | None = None) -> dict | None:
         """By name (case-insensitive); exact source first, then any enabled source."""
-        by_src = self._by_name.get(kind, {}).get(name.strip().lower())
+        by_src = self._by_name.get(kind, {}).get(norm_name(name))
         if not by_src:
             return None
         store = self.store(kind)
@@ -332,6 +388,9 @@ class Compendium:
             for src, k in by_src.items():
                 if src.lower() == source.lower():
                     return store[k]
+        for src in ["PHB", "DMG", *self.source_order]:
+            if src in by_src:
+                return store[by_src[src]]
         return store[next(iter(by_src.values()))]
 
     def get(self, kind: str, k: str) -> dict | None:

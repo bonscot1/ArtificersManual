@@ -62,7 +62,14 @@ class Character(Base):
     inventory: Mapped[list] = mapped_column(JSON, default=list)        # [{"name","qty","notes"}]
     currency: Mapped[dict] = mapped_column(JSON, default=dict)         # {"cp":0,"sp":0,"ep":0,"gp":0,"pp":0}
 
-    features_custom: Mapped[str] = mapped_column(Text, default="")     # feats, boons, anything not auto-found
+    feats: Mapped[list] = mapped_column(JSON, default=list)            # [{"key": "Alert|PHB", "note": ""}]
+    options: Mapped[list] = mapped_column(JSON, default=list)          # class options: infusions, invocations, styles...
+    counters: Mapped[list] = mapped_column(JSON, default=list)         # [{"name": "Rage", "max": 2, "used": 0, "reset": "long"}]
+
+    features_custom: Mapped[str] = mapped_column(Text, default="")     # anything the books don't fill in
+    appearance: Mapped[str] = mapped_column(String(300), default="")   # age, height, eyes...
+    personality: Mapped[str] = mapped_column(Text, default="")         # traits, ideals, bonds, flaws
+    allies: Mapped[str] = mapped_column(Text, default="")              # allies and organisations
     notes: Mapped[str] = mapped_column(Text, default="")
     backstory: Mapped[str] = mapped_column(Text, default="")
     notes_dm: Mapped[str] = mapped_column(Text, default="")
@@ -91,4 +98,39 @@ def make_engine(db_url: str):
 
 def make_session_factory(engine) -> sessionmaker[Session]:
     Base.metadata.create_all(engine)
+    migrate(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def _sql_default(column) -> str:
+    """create_all never adds columns to an existing table; new ones get a literal default."""
+    default = column.default.arg if column.default is not None else None
+    if callable(default):
+        default = default(None) if column.type.python_type in (list, dict) else None
+    if isinstance(default, bool):
+        return "1" if default else "0"
+    if isinstance(default, (int, float)):
+        return str(default)
+    if isinstance(default, (list, dict)):
+        import json
+        return "'" + json.dumps(default) + "'"
+    if isinstance(default, str):
+        return "'" + default.replace("'", "''") + "'"
+    return "NULL"
+
+
+def migrate(engine) -> list[str]:
+    """Add any model column missing from the live table (SQLite can only ADD COLUMN)."""
+    added = []
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            existing = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table.name})")}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                ddl = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column.type.compile(engine.dialect)}"
+                if not column.nullable or column.default is not None:
+                    ddl += f" DEFAULT {_sql_default(column)}"
+                conn.exec_driver_sql(ddl)
+                added.append(f"{table.name}.{column.name}")
+    return added

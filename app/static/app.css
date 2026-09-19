@@ -145,7 +145,7 @@ a.chip:hover { text-decoration: none; border-color: var(--gold); }
 .hp-foot button { padding: .15rem .5rem; font-size: .82rem; }
 .table-rows { display: flex; flex-direction: column; gap: .3rem; }
 .trow { display: grid; grid-template-columns: 2fr .8fr 1.6fr 2fr auto; gap: .3rem; align-items: center; }
-.trow.inv { grid-template-columns: .6fr 2fr 2fr auto; }
+.trow.inv { grid-template-columns: .6fr 2fr 2fr auto auto; }
 .trow.head { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 .trow.add { border-top: 1px dashed var(--line); padding-top: .4rem; margin-top: .2rem; }
 .trow input.short { text-align: center; }
@@ -213,3 +213,15 @@ table.list.compact td, table.list.compact th { padding: .12rem .4rem; text-align
 
 /* ---- toast */
 .toast { position: fixed; right: 1rem; bottom: 1rem; background: var(--bg-3); border: 1px solid var(--gold); color: var(--ink); padding: .4rem .9rem; border-radius: var(--radius); font-size: .85rem; z-index: 10; }
+
+/* ---- picks & counters */
+.table-chips { margin: .2rem 0 .4rem; }
+.table-chips .chip b { color: var(--gold); font-weight: 600; }
+details.pick > summary .link { float: right; }
+.pick-note { color: var(--gold); font-weight: 400; }
+.pick-note-form { margin: .2rem 0 .5rem; }
+.pick-note-form input { font-size: .85rem; }
+.pick-add { margin: .4rem 0 .2rem; }
+.counter-row .k { width: 9rem; }
+.counter-add { grid-template-columns: 2fr .6fr 1fr auto; margin-top: .4rem; }
+.win-body textarea + textarea { margin-top: .4rem; }

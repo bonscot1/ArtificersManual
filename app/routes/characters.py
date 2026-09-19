@@ -15,8 +15,8 @@ from ..templating import page
 
 router = APIRouter()
 
-TEXT_FIELDS = {"name": 120, "player": 120, "alignment": 40, "other_profs": 4000,
-               "features_custom": 20000, "notes": 40000, "backstory": 40000}
+TEXT_FIELDS = {"name": 120, "player": 120, "alignment": 40, "other_profs": 4000, "appearance": 300,
+               "features_custom": 20000, "personality": 20000, "allies": 20000, "notes": 40000, "backstory": 40000}
 INT_FIELDS = {  # name: (min, max)
     "xp": (0, 10_000_000), "hp_max": (1, 9999), "hp_temp": (0, 9999), "ac": (0, 60),
     "speed": (0, 999), "initiative_bonus": (-20, 20),
@@ -156,7 +156,7 @@ async def save(request: Request, cid: int):
         ch = _load(request, session, cid)
         for field, limit in TEXT_FIELDS.items():
             if field in form:
-                setattr(ch, field, str(form[field])[:limit].strip() if field in ("name", "player", "alignment") else str(form[field])[:limit])
+                setattr(ch, field, str(form[field])[:limit].strip() if field in ("name", "player", "alignment", "appearance") else str(form[field])[:limit])
         if not ch.name:
             ch.name = "Unnamed"
         for field, (lo, hi) in INT_FIELDS.items():
@@ -266,6 +266,11 @@ async def rest(request: Request, cid: int):
     with _db(request) as session:
         ch = _load(request, session, cid)
         ch.pact_used = 0
+        counters = [dict(x) for x in (ch.counters or [])]
+        for x in counters:
+            if kind == "long" or x.get("reset") == "short":
+                x["used"] = 0
+        ch.counters = counters
         if kind == "long":
             ch.hp_current, ch.hp_temp = ch.hp_max, 0
             ch.slots_used = {}
@@ -392,3 +397,82 @@ async def delete(request: Request, cid: int):
     resp = RedirectResponse("/", status_code=303)
     resp.headers["HX-Redirect"] = "/"
     return resp
+
+
+# ----------------------------------------------------------------- feats / class options
+@router.get("/c/{cid}/picks/search")
+async def pick_search(request: Request, cid: int, kind: str = "feat", q: str = "", scope: str = "class"):
+    comp = _comp(request)
+    q = q.strip().lower()
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        sheet = build_sheet(ch, comp)
+    if kind == "option":
+        pool = comp.optionalfeatures.values()
+        codes = set(sheet["option_type_codes"])
+        if codes and scope != "all":
+            pool = [o for o in pool if codes & set(o.get("featureType", []))]
+    else:
+        kind = "feat"
+        pool = comp.feats.values()
+    results = sorted((e for e in pool if not q or q in e["name"].lower()), key=lambda e: e["name"])[:60]
+    have = {p.get("key") for p in (ch.feats if kind == "feat" else ch.options) or []}
+    return page(request, "partials/pick_search.html", char=ch, kind=kind, results=results, have=have, q=q,
+                store_kind="feat" if kind == "feat" else "optionalfeature")
+
+
+@router.post("/c/{cid}/picks")
+async def picks(request: Request, cid: int):
+    form = await request.form()
+    kind = "feat" if str(form.get("kind", "feat")) == "feat" else "option"
+    op, key = str(form.get("op", "")), str(form.get("key", ""))
+    idx = _clamp(form.get("idx"), -1, 999, -1)
+    comp = _comp(request)
+    store = comp.feats if kind == "feat" else comp.optionalfeatures
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        current = [dict(x) for x in ((ch.feats if kind == "feat" else ch.options) or [])]
+        if op == "add" and key in store:
+            if kind == "option" or all(x.get("key") != key for x in current):   # an infusion can be taken twice
+                current.append({"key": key, "note": ""})
+        elif op == "remove" and 0 <= idx < len(current):
+            current.pop(idx)
+        elif op == "note" and 0 <= idx < len(current):
+            current[idx]["note"] = str(form.get("note", ""))[:200].strip()
+        if kind == "feat":
+            ch.feats = current
+        else:
+            ch.options = current
+        session.commit()
+        if op == "note":
+            return _toast(Response(status_code=204))
+        return _partial(request, "partials/features.html", ch)
+
+
+# ----------------------------------------------------------------- counters (rages, ki, uses per rest)
+@router.post("/c/{cid}/counters")
+async def counters(request: Request, cid: int):
+    form = await request.form()
+    op = str(form.get("op", ""))
+    idx = _clamp(form.get("idx"), -1, 999, -1)
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        rows = [dict(x) for x in (ch.counters or [])]
+        if op == "add":
+            name = str(form.get("name", "")).strip()[:60]
+            if name:
+                rows.append({"name": name, "max": _clamp(form.get("max"), 1, 99, 1), "used": 0,
+                             "reset": "short" if str(form.get("reset")) == "short" else "long"})
+        elif 0 <= idx < len(rows):
+            row = rows[idx]
+            if op == "remove":
+                rows.pop(idx)
+            elif op == "set":
+                row["used"] = _clamp(form.get("used"), 0, int(row.get("max", 0) or 0), 0)
+            elif op == "use":
+                row["used"] = min(int(row.get("max", 0) or 0), int(row.get("used", 0) or 0) + 1)
+            elif op == "undo":
+                row["used"] = max(0, int(row.get("used", 0) or 0) - 1)
+        ch.counters = rows
+        session.commit()
+        return _partial(request, "partials/counters.html", ch)
