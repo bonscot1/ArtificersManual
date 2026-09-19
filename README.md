@@ -53,8 +53,11 @@ the DM notes on each character.
 "The party" pane of the play view (refreshes every few seconds), everyone else is described the
 way you'd see them across the room: health in ten steps from "looks unhurt" to "is struggling
 to stay conscious" and "is down and not moving", coloured green to red, and conditions as what
-they look like - "is on the ground", "looks dazed", "looks sickly". The DM sees the phrases and
-the numbers. Your own card keeps its numbers.
+they look like - "is on the ground", "looks dazed", "looks sickly". Alongside: the portrait,
+race and class (no level or background), the appearance line, and hints anyone could notice -
+"is warded by something", "is holding a spell together", "looks magically spent", "could use a
+rest", "is slipping away", "armed with maul, hand axe, javelin". The DM sees the phrases and the
+numbers. Your own card keeps its numbers.
 
 **Companions** - familiars, steel defenders, homunculi - live on the sheet (name, kind, HP,
 AC, notes) and on the Combat screen: summon or dismiss, damage and heal. While summoned they

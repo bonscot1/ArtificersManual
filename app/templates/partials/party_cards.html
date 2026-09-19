@@ -6,15 +6,20 @@
   {% set ch = s.char %}
   {% set mine = is_dm or is_unlocked(ch) %}
   <a class="card themed {% if not mine %}locked{% endif %}" href="/c/{{ ch.id }}" style="{{ s.theme_style }}" data-theme="{{ s.theme }}">
-    <div class="card-head">
-      {% if ch.token or ch.portrait %}<img class="token-img" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}
-      <span class="card-name">{{ ch.name }}</span>
-      {% if ch.player %}<span class="muted">{{ ch.player }}</span>{% endif %}
-    </div>
-    {% if not mine %}<div class="card-lock">{{ 'unclaimed - open it to set a password' if not ch.password_hash else 'password' }}</div>{% endif %}
-    <div class="card-sub">
-      {{ s.race.name if s.race else 'No race' }} &middot;
-      {{ s.cls.name if s.cls else 'No class' }}{% if s.sub %} ({{ s.sub.name }}){% endif %} {{ ch.level }}
+    <div class="card-row">
+      {% if ch.portrait or ch.token %}<img class="card-portrait" src="/c/{{ ch.id }}/art/{{ 'portrait' if ch.portrait else 'token' }}" alt="">{% endif %}
+      <div class="card-main">
+        <div class="card-head">
+          <span class="card-name">{{ ch.name }}</span>
+          {% if ch.player %}<span class="muted">{{ ch.player }}</span>{% endif %}
+        </div>
+        {% if not mine %}<div class="card-lock">{{ 'unclaimed - open it to set a password' if not ch.password_hash else 'password' }}</div>{% endif %}
+        <div class="card-sub">
+          {{ s.race.name if s.race else 'No race' }} &middot;
+          {{ s.cls.name if s.cls else 'No class' }}{% if mine %}{% if s.sub %} ({{ s.sub.name }}){% endif %} {{ ch.level }}{% if s.bg %} &middot; {{ s.bg.name }}{% endif %}{% endif %}
+        </div>
+        {% if ch.appearance %}<div class="card-look muted small">{{ ch.appearance }}</div>{% endif %}
+      </div>
     </div>
     {% if mine %}
     {% set pct = (100 * ch.hp_current / ch.hp_max) if ch.hp_max else 0 %}
@@ -37,6 +42,7 @@
       {% for look in s.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
     </div>
     {% endif %}
+    {% if s.seen.hints %}<div class="hints">{% for h in s.seen.hints %}<span class="hint">{{ h }}</span>{% endfor %}</div>{% endif %}
     {% for c in s.companions if c.summoned %}
     <div class="seen small">
       <span class="seen-dot" style="background: {{ c.seen.colour }}"></span>

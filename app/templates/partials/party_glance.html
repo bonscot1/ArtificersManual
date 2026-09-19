@@ -2,25 +2,30 @@
 {% for s in sheets %}
 {% set ch = s.char %}
 <div class="glance" style="{{ s.theme_style }}" data-theme="{{ s.theme }}">
-  <div class="glance-head">
-    {% if ch.token or ch.portrait %}<img class="token-img" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}
-    <span class="glance-name">{{ ch.name }}</span>
-    {% if is_dm %}<span class="muted small">{{ ch.hp_current }}/{{ ch.hp_max }}{% if ch.hp_temp %} +{{ ch.hp_temp }}{% endif %} &middot; AC {{ ch.ac }}</span>{% endif %}
+  {% if ch.portrait or ch.token %}<img class="glance-portrait" src="/c/{{ ch.id }}/art/{{ 'portrait' if ch.portrait else 'token' }}" alt="">{% endif %}
+  <div class="glance-main">
+    <div class="glance-head">
+      <span class="glance-name">{{ ch.name }}</span>
+      <span class="muted small">{{ s.race.name if s.race else '' }}{% if s.cls %} &middot; {{ s.cls.name }}{% endif %}</span>
+      {% if is_dm %}<span class="muted small">&middot; {{ ch.hp_current }}/{{ ch.hp_max }}{% if ch.hp_temp %} +{{ ch.hp_temp }}{% endif %} &middot; AC {{ ch.ac }}</span>{% endif %}
+    </div>
+    {% if ch.appearance %}<div class="glance-look muted small">{{ ch.appearance }}</div>{% endif %}
+    <div class="seen">
+      <span class="seen-dot" style="background: {{ s.seen.colour }}"></span>
+      <span style="color: {{ s.seen.colour }}">{{ s.seen.health|capitalize }}</span>
+      {% for look in s.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
+    </div>
+    {% if s.seen.hints %}<div class="hints">{% for h in s.seen.hints %}<span class="hint">{{ h }}</span>{% endfor %}</div>{% endif %}
+    {% if is_dm and ch.concentration %}<div class="muted small">concentrating on {{ ch.concentration }}</div>{% endif %}
+    {% for c in s.companions if c.summoned %}
+    <div class="seen small">
+      <span class="seen-dot" style="background: {{ c.seen.colour }}"></span>
+      <span class="muted">{{ ch.name.split(' ')[0] }}'s {{ c.name }}</span>
+      {% if is_dm %}<span class="muted">{{ c.hp_current }}/{{ c.hp_max }}</span>{% endif %}
+      <span style="color: {{ c.seen.colour }}">{{ c.seen.health }}</span>
+      {% for look in c.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
+    </div>
+    {% endfor %}
   </div>
-  <div class="seen">
-    <span class="seen-dot" style="background: {{ s.seen.colour }}"></span>
-    <span style="color: {{ s.seen.colour }}">{{ s.seen.health|capitalize }}</span>
-    {% for look in s.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
-    {% if is_dm and ch.concentration %}<span class="muted small">concentrating on {{ ch.concentration }}</span>{% endif %}
-  </div>
-  {% for c in s.companions if c.summoned %}
-  <div class="seen small">
-    <span class="seen-dot" style="background: {{ c.seen.colour }}"></span>
-    <span class="muted">{{ ch.name.split(' ')[0] }}'s {{ c.name }}</span>
-    {% if is_dm %}<span class="muted">{{ c.hp_current }}/{{ c.hp_max }}</span>{% endif %}
-    <span style="color: {{ c.seen.colour }}">{{ c.seen.health }}</span>
-    {% for look in c.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}
-  </div>
-  {% endfor %}
 </div>
 {% endfor %}

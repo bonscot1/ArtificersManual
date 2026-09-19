@@ -12,7 +12,7 @@ from .compendium import format as fmt
 from .compendium import rules
 from .compendium.loader import Compendium, entity_url
 from .db import Character
-from .narrative import describe
+from .narrative import describe, hints
 from .themes import theme_key, theme_style
 
 # race entries that describe rather than grant something
@@ -113,8 +113,16 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
                "conditions": list(comp.get("conditions") or []), "notes": comp.get("notes", "")}
         row["seen"] = describe(row["name"], row["hp_current"], row["hp_max"], row["conditions"])
         companions.append(row)
+    seen = describe(ch.name, ch.hp_current, ch.hp_max, ch.conditions or [])
+    seen["hints"] = hints(hp_current=ch.hp_current, hp_temp=ch.hp_temp or 0, concentration=ch.concentration or "",
+                          slots=(spellcasting or {}).get("slots"), pact=(spellcasting or {}).get("pact"),
+                          hit_dice_used=ch.hit_dice_used or 0, level=ch.level, death_success=ch.death_success or 0,
+                          death_fail=ch.death_fail or 0,
+                          attacks=[a for a in (ch.attacks or [])           # spells listed as attacks aren't weapons
+                                   if re.sub(r"[^a-z0-9]", "", str(a.get("name", "")).split(" (")[0].lower())
+                                   not in getattr(c, "spell_norms", set())])
     return {
-        "seen": describe(ch.name, ch.hp_current, ch.hp_max, ch.conditions or []),
+        "seen": seen,
         "companions": companions,
         "theme": theme,
         "theme_style": theme_style(theme),

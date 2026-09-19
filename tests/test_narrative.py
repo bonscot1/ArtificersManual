@@ -68,3 +68,38 @@ def test_companions_show_when_summoned(tmp_path):
     assert "3</span><span class=\"hp-max\">/ 3" in r.text
     r = player.post(f"/c/{a}/companions", data={"op": "remove", "idx": "0"})
     assert "Pip" not in r.text
+
+
+def test_hints_are_observations_not_numbers():
+    from app.narrative import hints
+    assert hints(hp_current=10) == []
+    h = hints(hp_current=10, hp_temp=5, concentration="Bless", slots=[{"total": 4, "used": 3}], hit_dice_used=2, level=3,
+              attacks=[{"name": "Maul"}, {"name": "Hand Axe (x2)"}, {"name": "Unarmed"}, {"name": "Maul"}])
+    assert h == ["is warded by something", "is holding a spell together", "looks magically spent", "could use a rest",
+                 "armed with maul, hand axe"]
+    assert "has nothing left to cast" in hints(hp_current=1, pact={"count": 2, "used": 2})
+    assert "is slipping away" in hints(hp_current=0, death_fail=2)
+    assert "seems to be stabilising" in hints(hp_current=0, death_success=2)
+    assert hints(hp_current=10, slots=[{"total": 4, "used": 1}]) == []
+
+
+def test_party_views_show_portraits_and_hints_but_no_level(tmp_path):
+    import io
+    dm, player, a, b = _party(tmp_path)
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+    dm.post(f"/c/{b}/art", data={"kind": "portrait"}, files={"file": ("bea.png", io.BytesIO(png), "image/png")})
+    dm.post(f"/c/{b}/save", data={"appearance": "tall, scarred, never blinks"})
+    dm.post(f"/c/{b}/hp", data={"action": "temp", "amount": "5"})
+    dm.post(f"/c/{b}/attacks", data={"op": "add", "name": "Greataxe"})
+    dm.post(f"/c/{b}/attacks", data={"op": "add", "name": "Firebolt", "bonus": "+5", "damage": "1d10 fire"})
+    html = player.get("/").text
+    cards = html.split('<a class="card')
+    mine = next(c for c in cards if f'href="/c/{a}"' in c)
+    theirs = next(c for c in cards if f'href="/c/{b}"' in c)
+    assert f'src="/c/{b}/art/portrait"' in theirs and "tall, scarred, never blinks" in theirs
+    assert "is warded by something" in theirs and "armed with greataxe" in theirs and "firebolt" not in theirs
+    assert "Wizard 3" not in theirs and "Sage" not in theirs and "Wizard" in theirs      # class yes, level and background no
+    assert "Wizard 3" in mine                                                          # your own card keeps its detail
+    glance = player.get(f"/party/glance?me={a}").text
+    assert f'src="/c/{b}/art/portrait"' in glance and "never blinks" in glance and "armed with greataxe" in glance
+    assert " 3<" not in glance

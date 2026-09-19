@@ -407,6 +407,7 @@ class Compendium:
             for sp in data.get("spell", []):
                 if self._enabled(sp):
                     self._register("spell", sp, self.spells)
+        self.spell_norms = {re.sub(r"[^a-z0-9]", "", sp["name"].lower()) for sp in self.spells.values()}
         lookup = self._read("generated/gendata-spell-source-lookup.json") or {}
         for sp in self.spells.values():
             info = lookup.get(sp["source"].lower(), {}).get(sp["name"].lower(), {})

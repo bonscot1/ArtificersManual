@@ -43,6 +43,6 @@ def test_art_upload_and_serve(client):
     assert r.status_code == 200 and r.content == png
     assert client.get(f"/c/{cid}/art/token").status_code == 200              # token falls back to the portrait
     assert f'src="/c/{cid}/art/portrait"' in client.get(f"/c/{cid}").text
-    assert f'src="/c/{cid}/art/token"' in client.get("/").text
+    assert f'src="/c/{cid}/art/portrait"' in client.get("/").text          # cards show the portrait when there is one
     r = client.post(f"/c/{cid}/art", data={"kind": "token"}, files={"file": ("x.txt", io.BytesIO(b"nope"), "text/plain")})
     assert "PNG, JPG or WebP" in r.headers["HX-Trigger"]
