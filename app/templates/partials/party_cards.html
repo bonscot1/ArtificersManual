@@ -4,11 +4,13 @@
 <div class="cards">
 {% for s in sheets %}
   {% set ch = s.char %}
-  <a class="card" href="/c/{{ ch.id }}">
+  {% set mine = is_dm or ch.id in unlocked %}
+  <a class="card {% if not mine %}locked{% endif %}" href="/c/{{ ch.id }}">
     <div class="card-head">
       <span class="card-name">{{ ch.name }}</span>
       {% if ch.player %}<span class="muted">{{ ch.player }}</span>{% endif %}
     </div>
+    {% if not mine %}<div class="card-lock">{{ 'unclaimed - open it to set a password' if not ch.password_hash else 'password' }}</div>{% endif %}
     <div class="card-sub">
       {{ s.race.name if s.race else 'No race' }} &middot;
       {{ s.cls.name if s.cls else 'No class' }}{% if s.sub %} ({{ s.sub.name }}){% endif %} {{ ch.level }}

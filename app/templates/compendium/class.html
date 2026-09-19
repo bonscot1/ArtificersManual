@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ cls.name }} - Artificer's Manual{% endblock %}
 {% block content %}
-<div class="page-head"><h1>{{ cls.name }}{% if sub_entry %} <span class="muted">&middot; {{ sub_entry.name }}</span>{% endif %}</h1><span class="muted">{{ cls.source }} p.{{ cls.page }}</span></div>
+<div class="page-head"><h1>{{ cls.name }}{% if sub_entry %} <span class="muted">&middot; {{ sub_entry.name }}</span>{% endif %}</h1><span class="muted">{{ cls.source }} p.{{ cls.page }} &middot; <a href="{{ wikidot_url('subclass', sub_entry, cls) if sub_entry else wikidot_url('class', cls) }}" target="_blank" rel="noopener">on wikidot</a></span></div>
 <div class="two-col">
   <div>
     <section class="win">

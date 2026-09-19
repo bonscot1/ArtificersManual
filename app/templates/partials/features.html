@@ -4,7 +4,7 @@
   <div class="win-body">
     {% if sheet.race %}
     <div class="feat-group">
-      <div class="feat-group-head">{{ sheet.race.name }} <span class="muted small">{{ sheet.race_size }} &middot; {{ sheet.race_speed }} &middot; {{ sheet.race_ability }}{% if sheet.race.source != 'PHB' %} &middot; {{ sheet.race.source }}{% endif %}</span></div>
+      <div class="feat-group-head">{{ sheet.race.name }} <span class="muted small">{{ sheet.race_size }} &middot; {{ sheet.race_speed }} &middot; {{ sheet.race_ability }}{% if sheet.race.source != 'PHB' %} &middot; {{ sheet.race.source }}{% endif %} &middot; <a href="{{ wikidot_url('race', sheet.race) }}" target="_blank" rel="noopener">wikidot</a></span></div>
       {% for t in sheet.race_traits %}
       <details class="feat"><summary>{{ t.name }}</summary><div class="feat-body">{{ t.entries|entries }}</div></details>
       {% endfor %}
@@ -16,7 +16,7 @@
 
     {% if sheet.cls %}
     <div class="feat-group">
-      <div class="feat-group-head">{{ sheet.cls.name }}{% if sheet.sub %} &middot; {{ sheet.sub.name }}{% endif %} <span class="muted small">d{{ sheet.hit_die }} &middot; saves {{ sheet.cls.proficiency|join(', ')|upper }}{% if sheet.cls.source != 'PHB' %} &middot; {{ sheet.cls.source }}{% endif %}</span></div>
+      <div class="feat-group-head">{{ sheet.cls.name }}{% if sheet.sub %} &middot; {{ sheet.sub.name }}{% endif %} <span class="muted small">d{{ sheet.hit_die }} &middot; saves {{ sheet.cls.proficiency|join(', ')|upper }}{% if sheet.cls.source != 'PHB' %} &middot; {{ sheet.cls.source }}{% endif %} &middot; <a href="{{ wikidot_url('subclass', sheet.sub, sheet.cls) if sheet.sub else wikidot_url('class', sheet.cls) }}" target="_blank" rel="noopener">wikidot</a></span></div>
       {% if sheet.class_table %}
       <div class="chips table-chips">{% for label, value in sheet.class_table %}<span class="chip">{{ label }} <b>{{ value }}</b></span>{% endfor %}</div>
       {% endif %}

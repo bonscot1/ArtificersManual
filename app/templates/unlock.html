@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ ch.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<section class="win">
+  <div class="win-title">{{ ch.name }}{% if ch.player %} <span class="muted small">{{ ch.player }}</span>{% endif %}</div>
+  <div class="win-body">
+    {% if mode == 'set' %}
+    <p>Nobody has claimed this sheet yet. Set a password so nobody opens the wrong character - anything you'll remember, there are no rules.</p>
+    {% else %}
+    <p>This sheet has a password.</p>
+    {% endif %}
+    <form method="post" action="/c/{{ ch.id }}/unlock" class="stack">
+      <input type="password" name="password" autofocus autocomplete="{{ 'new-password' if mode == 'set' else 'current-password' }}" placeholder="{{ 'choose a password' if mode == 'set' else 'password' }}">
+      {% if error %}<p class="err">{{ error }}</p>{% endif %}
+      <button type="submit" class="primary">{{ 'Claim this character' if mode == 'set' else 'Open' }}</button>
+    </form>
+    <p class="muted small"><a href="/">Back to the party</a></p>
+  </div>
+</section>
+{% endblock %}

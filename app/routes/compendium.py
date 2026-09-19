@@ -103,7 +103,7 @@ async def backgrounds(request: Request):
 
 @router.get("/backgrounds/{key}")
 async def background(request: Request, key: str):
-    return page(request, "compendium/entry.html", title="Background", e=_get(request, "background", key))
+    return page(request, "compendium/entry.html", title="Background", kind="background", e=_get(request, "background", key))
 
 
 @router.get("/feats")
@@ -115,12 +115,12 @@ async def feats(request: Request):
 
 @router.get("/feats/{key}")
 async def feat(request: Request, key: str):
-    return page(request, "compendium/entry.html", title="Feat", e=_get(request, "feat", key))
+    return page(request, "compendium/entry.html", title="Feat", kind="feat", e=_get(request, "feat", key))
 
 
 @router.get("/optional-features/{key}")
 async def optional_feature(request: Request, key: str):
-    return page(request, "compendium/entry.html", title="Option", e=_get(request, "optionalfeature", key))
+    return page(request, "compendium/entry.html", title="Option", kind=None, e=_get(request, "optionalfeature", key))
 
 
 @router.get("/items")
@@ -154,4 +154,4 @@ async def conditions(request: Request):
 
 @router.get("/conditions/{key}")
 async def condition(request: Request, key: str):
-    return page(request, "compendium/entry.html", title="Condition", e=_get(request, "condition", key))
+    return page(request, "compendium/entry.html", title="Condition", kind=None, e=_get(request, "condition", key))

@@ -6,3 +6,4 @@ data/5etools/
 data/*.db*
 settings.json
 .claude/
+data/secret.key

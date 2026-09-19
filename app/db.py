@@ -21,6 +21,7 @@ class Character(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     player: Mapped[str] = mapped_column(String(120), default="")
+    password_hash: Mapped[str] = mapped_column(String(200), default="")   # empty = nobody has claimed this sheet yet
 
     race_key: Mapped[str] = mapped_column(String(160), default="")
     subrace_key: Mapped[str] = mapped_column(String(160), default="")

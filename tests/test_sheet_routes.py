@@ -121,6 +121,7 @@ def test_dm_notes_and_delete_are_dm_only(tmp_path):
 
     player = TestClient(dm.app)
     player.post("/login", data={"password": "tbl"})
+    player.post(f"/c/{cid}/unlock", data={"password": "mine"})        # claims the sheet
     html = player.get(f"/c/{cid}").text
     assert "the twist" not in html and "DM notes" not in html
     assert player.post(f"/c/{cid}/save", data={"notes_dm": "hax"}).status_code == 403

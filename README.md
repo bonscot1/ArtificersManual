@@ -22,11 +22,17 @@ Then open http://localhost:8000. The console prints the address for other device
 network (e.g. `http://192.168.0.120:8000`). Windows will ask once whether Python may accept
 connections - allow it on private networks.
 
-## Passwords and remote players
+## Who can open what
 
-With no `settings.json` the site is open to anyone who can reach it, and the machine running the
-server is the DM. That is fine on a home network. Before exposing it further, copy
-`settings.example.json` to `settings.json` and set both passwords:
+Every character has its own password. The first person to open a new sheet is asked to set one
+(anything goes - it only stops people picking the wrong character); that browser then stays
+unlocked and everyone else needs the password. The DM opens every sheet and can clear a
+forgotten password from the DM tools at the bottom of the sheet.
+
+The DM signs in at **DM sign in** (top right) with `dm_password` from `settings.json`. With no
+`settings.json` at all the site is open and the machine running the server counts as the DM;
+that is fine on a home network. Before exposing it further, copy `settings.example.json` to
+`settings.json` and set both passwords:
 
 ```json
 {
@@ -36,8 +42,9 @@ server is the DM. That is fine on a home network. Before exposing it further, co
 }
 ```
 
-Players type the table password once; the DM password unlocks DM notes and deleting characters
-(from any device - once it is set, "localhost is the DM" switches off, so a tunnel can't grant DM).
+Players type the table password once; the DM password unlocks DM notes, password resets and
+deleting characters (from any device - once it is set, "localhost is the DM" switches off, so a
+tunnel can't grant DM). Cookies are signed with `data/secret.key`, generated on first run.
 
 To let friends who aren't on your network in, run a tunnel next to the server instead of opening
 router ports. Cloudflare's quick tunnel needs no account:
@@ -69,9 +76,19 @@ warns about anything it couldn't place. Pin the rest with `--race`, `--class`, `
 ## Books
 
 `sources` in `settings.json` lists the books whose content is switched on, by 5etools code.
-The default is this table's set - PHB, XGE, TCE, SCAG, MPMM, VGM, TTP, BGG - and the order
-decides which printing a bare name means ("Goliath" is the Multiverse one, not Volo's).
+The default is this table's set - PHB, XGE, TCE, SCAG, MPMM, VGM, TTP, BGG.
+
+When a race, subclass, feat or spell was reprinted in a later enabled book, only the newest
+printing is offered - the version dnd5e.wikidot.com shows first (the Multiverse Goliath and
+Tortle, Tasha's Artificer). The older text stays in the data but out of the pickers. Compendium
+pages link to the matching wikidot page for anything the sheet doesn't show.
 Magic items load from every book regardless, so loot from the DMG is always there.
+
+## House rules
+
+`house_rules.md` in the site folder is the **Rules** page: the 2014 base plus whichever 2024
+rules the table has adopted (potions as a bonus action, and so on). Edit the file; the page
+updates on the next load.
 
 | code | book |
 | --- | --- |

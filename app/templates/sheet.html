@@ -151,7 +151,10 @@
       <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
         <textarea name="notes_dm" rows="8" placeholder="Secrets, hooks, what they don't know yet">{{ ch.notes_dm }}</textarea>
       </form>
-      <div class="win-body">
+      <div class="win-body dm-tools">
+        <form hx-post="/c/{{ ch.id }}/password/reset" hx-confirm="Clear {{ ch.name }}'s password? The next person to open the sheet sets a new one." hx-swap="none">
+          <button class="ghost">{{ 'Reset password' if ch.password_hash else 'No password set yet' }}</button>
+        </form>
         <form hx-post="/c/{{ ch.id }}/delete" hx-confirm="Delete {{ ch.name }} for good?" hx-swap="none">
           <button class="danger">Delete character</button>
         </form>

@@ -3,8 +3,9 @@
 {% block main_class %}narrow{% endblock %}
 {% block content %}
 <section class="win">
-  <div class="win-title">Table password</div>
+  <div class="win-title">Sign in</div>
   <div class="win-body">
+    <p class="muted small">{% if settings.table_password %}The table password gets you in; the DM password makes you the DM.{% else %}The DM password. Players don't need to sign in here - open your character from the party page.{% endif %}</p>
     <form method="post" action="/login" class="stack">
       <input type="hidden" name="next" value="{{ next }}">
       <input type="password" name="password" autofocus autocomplete="current-password" placeholder="password">

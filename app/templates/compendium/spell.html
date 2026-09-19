@@ -17,5 +17,5 @@
     <p class="muted small">Classes: {{ casters|join(', ') if casters else 'none in your books' }}{% if sub_casters %}. Also: {{ sub_casters|join(', ') }}{% endif %}</p>
   </div>
 </section>
-<p><a href="/compendium/spells">All spells</a></p>
+<p><a href="/compendium/spells">All spells</a> &middot; <a href="{{ wikidot_url('spell', sp) }}" target="_blank" rel="noopener">on wikidot</a></p>
 {% endblock %}

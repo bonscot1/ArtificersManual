@@ -39,6 +39,43 @@ def entity_url(kind: str, entity: dict) -> str:
     return f"/compendium/{KIND_PATHS[kind]}/{quote(key(entity['name'], entity['source']), safe='')}"
 
 
+def wikidot_slug(name: str) -> str:
+    name = str(name).split(";")[0]                      # "Strike of the Giants; Hill" -> the feat page
+    name = re.sub(r"\(.*?\)", "", name)                # "Variant Criminal (Spy)" -> the base page
+    name = re.sub(r"^variant\s+", "", name.strip(), flags=re.I)
+    name = name.lower().replace("'", "").replace("’", "")
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", name)).strip("-")
+
+
+def wikidot_url(kind: str, entity: dict, class_entity: dict | None = None) -> str | None:
+    """The matching dnd5e.wikidot.com page, for the details the sheet doesn't show."""
+    base = "https://dnd5e.wikidot.com/"
+    if kind == "spell":
+        return base + "spell:" + wikidot_slug(entity["name"])
+    if kind == "race":
+        return base + "lineage:" + wikidot_slug(entity["name"])
+    if kind == "class":
+        return base + wikidot_slug(entity["name"])
+    if kind == "subclass" and class_entity:
+        return base + wikidot_slug(class_entity["name"]) + ":" + wikidot_slug(entity.get("shortName") or entity["name"])
+    if kind == "feat":
+        return base + "feat:" + wikidot_slug(entity["name"])
+    if kind == "background":
+        return base + "background:" + wikidot_slug(entity["name"])
+    return None
+
+
+def reprint_targets(entity: dict) -> list[tuple[str, str]]:
+    """(name, source) of every later printing this entry was replaced by."""
+    out = []
+    for r in entity.get("reprintedAs") or []:
+        uid = r.get("uid", "") if isinstance(r, dict) else str(r)
+        parts = split_pipe(uid)
+        if parts and parts[0]:
+            out.append((parts[0], parts[-1] if len(parts) > 1 and parts[-1] else "PHB"))
+    return out
+
+
 def norm_name(name: str) -> str:
     """Lookup key: case and apostrophes don't matter ("Tinkers Tools" finds "Tinker's Tools")."""
     return str(name).strip().lower().replace("’", "").replace("'", "")
@@ -281,16 +318,54 @@ class Compendium:
             data = self._read(rel)
             if not data:
                 continue
-            for e in expand_versions(resolve_copies(data.get(prop, []), ("name", "source"))):
+            entries = resolve_copies(data.get(prop, []), ("name", "source"))
+            if kind == "feat":   # "Strike of the Giants; Hill" is a pick of its own
+                entries = expand_versions(entries)
+            for e in entries:
                 if self._enabled(e):
                     self._register(kind, e, store)
         self._load_items()
+        self._drop_superseded()
+
+    # ---------------------------------------------------------------- one printing per name
+    def _superseded(self, entity: dict, *stores: dict) -> bool:
+        """Replaced by a later printing that is also enabled (Volo's Goliath -> Multiverse Goliath)."""
+        for name, src in reprint_targets(entity):
+            if src in SOURCES_2024 or src not in self.sources or src == entity.get("source"):
+                continue
+            if any(key(name, src) in st for st in stores):
+                return True
+        return False
+
+    def _unregister(self, kind: str, k: str, store: dict) -> None:
+        e = store.pop(k, None)
+        if e:
+            by_src = self._by_name.get(kind, {}).get(norm_name(e["name"]), {})
+            by_src.pop(e["source"], None)
+
+    def _drop_superseded(self) -> None:
+        """Keep the version the books themselves call current - what wikidot shows first."""
+        for kind, store in (("race", self.races), ("class", self.classes), ("background", self.backgrounds),
+                            ("feat", self.feats), ("optionalfeature", self.optionalfeatures),
+                            ("spell", self.spells), ("item", self.items)):
+            for k in [k for k, e in store.items() if self._superseded(e, store)]:
+                self._unregister(kind, k, store)
+        for rk in [rk for rk in self.subraces if rk not in self.races]:
+            del self.subraces[rk]
+        for rk, subs in self.subraces.items():
+            self.subraces[rk] = [s for s in subs if not self._superseded(s, self.races)]
+        for ck in [ck for ck in self.subclasses if ck not in self.classes]:
+            del self.subclasses[ck]
+        for ck, subs in self.subclasses.items():
+            named = {key(sc["name"], sc["source"]): sc for sc in subs.values()}
+            for sk in [sk for sk, sc in subs.items() if self._superseded(sc, named)]:
+                del subs[sk]
 
     def _load_races(self) -> None:
         data = self._read("races.json")
         if not data:
             return
-        races = expand_versions(resolve_copies(data.get("race", []), ("name", "source")))
+        races = resolve_copies(data.get("race", []), ("name", "source"))   # versions are in-race choices, not races
         subraces = resolve_copies(data.get("subrace", []), ("name", "source", "raceName", "raceSource"))
         for r in races:
             if self._enabled(r):

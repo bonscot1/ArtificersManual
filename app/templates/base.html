@@ -14,10 +14,11 @@
     <a href="/" {% if request.url.path == '/' %}class="on"{% endif %}>Party</a>
     <a href="/new" {% if request.url.path == '/new' %}class="on"{% endif %}>New character</a>
     <a href="/compendium" {% if request.url.path.startswith('/compendium') %}class="on"{% endif %}>Compendium</a>
+    <a href="/rules" {% if request.url.path == '/rules' %}class="on"{% endif %}>Rules</a>
   </nav>
   <div class="who">
-    {% if is_dm %}<span class="pill pill-dm">DM</span>{% elif role %}<span class="pill">player</span>{% endif %}
-    {% if settings.table_password or settings.dm_password %}
+    {% if is_dm %}<span class="pill pill-dm">DM</span>{% elif settings.dm_password %}<a class="pill" href="/login">DM sign in</a>{% endif %}
+    {% if signed_in %}
     <form method="post" action="/logout" class="inline"><button class="link">log out</button></form>
     {% endif %}
   </div>

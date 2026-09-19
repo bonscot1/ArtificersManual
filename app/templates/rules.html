@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Rules - Artificer's Manual{% endblock %}
+{% block main_class %}narrow{% endblock %}
+{% block content %}
+<div class="rules">{{ body|safe }}</div>
+{% if is_dm %}<p class="muted small">Edit <code>house_rules.md</code> in the site folder; it shows here as soon as it's saved.</p>{% endif %}
+{% endblock %}

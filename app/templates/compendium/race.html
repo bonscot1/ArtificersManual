@@ -2,7 +2,7 @@
 {% block title %}{{ race.name }} - Artificer's Manual{% endblock %}
 {% block main_class %}narrow{% endblock %}
 {% block content %}
-<div class="page-head"><h1>{{ race.name }}</h1><span class="muted">{{ race.source }} p.{{ race.page }}</span></div>
+<div class="page-head"><h1>{{ race.name }}</h1><span class="muted">{{ race.source }} p.{{ race.page }} &middot; <a href="{{ wikidot_url('race', race) }}" target="_blank" rel="noopener">on wikidot</a></span></div>
 {% if variants|length > 1 %}
 <div class="chips">
   {% for o in variants %}<a class="chip {% if o.subrace_key == sub %}on{% endif %}" href="/compendium/races/{{ key|urlencode }}{% if o.subrace_key %}?sub={{ o.subrace_key|urlencode }}{% endif %}">{{ o.label }}</a>{% endfor %}

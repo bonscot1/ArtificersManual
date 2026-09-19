@@ -225,3 +225,20 @@ details.pick > summary .link { float: right; }
 .counter-row .k { width: 9rem; }
 .counter-add { grid-template-columns: 2fr .6fr 1fr auto; margin-top: .4rem; }
 .win-body textarea + textarea { margin-top: .4rem; }
+
+/* ---- claimed characters */
+.card.locked { opacity: .85; }
+.card-lock { font-size: .75rem; color: var(--amber); }
+.dm-tools { display: flex; gap: .5rem; flex-wrap: wrap; }
+a.pill { color: var(--gold); }
+a.pill:hover { text-decoration: none; border-color: var(--gold); }
+.rules { max-width: 60rem; }
+.rules h1, .rules h2, .rules h3 { color: var(--gold); margin-top: 1.2rem; }
+.rules h1 { font-size: 1.4rem; }
+.rules h2 { font-size: 1.1rem; }
+.rules h3 { font-size: 1rem; }
+.rules ul { padding-left: 1.3rem; }
+.rules li { margin: .2rem 0; }
+.rules table { border-collapse: collapse; margin: .5rem 0; }
+.rules th, .rules td { border: 1px solid var(--line); padding: .2rem .6rem; text-align: left; }
+.rules code { background: var(--bg-3); padding: 0 .3rem; border-radius: 3px; }

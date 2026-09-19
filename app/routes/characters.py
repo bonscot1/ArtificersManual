@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import select
 
+from .. import auth
 from ..compendium import format as fmt
 from ..compendium import rules
 from ..db import Character
@@ -35,11 +36,26 @@ def _comp(request: Request):
     return request.app.state.compendium
 
 
-def _load(request: Request, session, cid: int) -> Character:
+def _fetch(session, cid: int) -> Character:
     ch = session.get(Character, cid)
     if not ch:
         raise HTTPException(404, "No such character")
     return ch
+
+
+def _load(request: Request, session, cid: int) -> Character:
+    """The character, once this browser has claimed it (or the DM is asking)."""
+    ch = _fetch(session, cid)
+    if request.state.role != "dm" and cid not in request.state.unlocked:
+        raise auth.Locked(cid)
+    return ch
+
+
+def _set_unlock_cookie(request: Request, resp: Response, cid: int) -> Response:
+    ids = set(request.state.unlocked) | {cid}
+    resp.set_cookie(auth.CHAR_COOKIE, auth.unlock_cookie_value(ids, request.app.state.secret),
+                    httponly=True, samesite="lax", max_age=60 * 60 * 24 * 365)
+    return resp
 
 
 def _require_dm(request: Request) -> None:
@@ -128,11 +144,49 @@ async def create(request: Request):
         session.add(ch)
         session.commit()
         cid = ch.id
-    return RedirectResponse(f"/c/{cid}", status_code=303)
+    if request.state.role == "dm":
+        return RedirectResponse(f"/c/{cid}", status_code=303)
+    return RedirectResponse(f"/c/{cid}/unlock", status_code=303)
 
 
 def fmt_key(entity: dict) -> str:
     return f"{entity['name']}|{entity['source']}"
+
+
+# ----------------------------------------------------------------- claiming a character
+@router.get("/c/{cid}/unlock")
+async def unlock_form(request: Request, cid: int):
+    with _db(request) as session:
+        ch = _fetch(session, cid)
+        if request.state.role == "dm" or cid in request.state.unlocked:
+            return RedirectResponse(f"/c/{cid}", status_code=303)
+        return page(request, "unlock.html", ch=ch, mode="enter" if ch.password_hash else "set", error=None)
+
+
+@router.post("/c/{cid}/unlock")
+async def unlock(request: Request, cid: int):
+    form = await request.form()
+    password = str(form.get("password", ""))
+    with _db(request) as session:
+        ch = _fetch(session, cid)
+        if not ch.password_hash:
+            if not password:
+                return page(request, "unlock.html", ch=ch, mode="set", error="Type something - anything - to use as the password.")
+            ch.password_hash = auth.hash_password(password)
+            session.commit()
+        elif not auth.verify_password(password, ch.password_hash):
+            return page(request, "unlock.html", ch=ch, mode="enter", error="That's not it. Ask the DM to reset it if it's forgotten.")
+    return _set_unlock_cookie(request, RedirectResponse(f"/c/{cid}", status_code=303), cid)
+
+
+@router.post("/c/{cid}/password/reset")
+async def password_reset(request: Request, cid: int):
+    _require_dm(request)
+    with _db(request) as session:
+        ch = _fetch(session, cid)
+        ch.password_hash = ""
+        session.commit()
+    return _toast(Response(status_code=204), "Password cleared - the next person to open the sheet sets a new one")
 
 
 # ----------------------------------------------------------------- sheet

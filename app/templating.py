@@ -9,7 +9,7 @@ from markupsafe import Markup
 
 from .compendium import format as fmt
 from .compendium import rules
-from .compendium.loader import Compendium, entity_url, key
+from .compendium.loader import Compendium, entity_url, key, wikidot_url
 from .compendium.render import Renderer
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -38,6 +38,7 @@ def build_templates(compendium: Compendium) -> Jinja2Templates:
     env.filters["prereq"] = fmt.prerequisite_text
     env.filters["ekey"] = lambda e: key(e["name"], e["source"])
     env.globals["entity_url"] = entity_url
+    env.globals["wikidot_url"] = wikidot_url
     env.globals["ABILITIES"] = rules.ABILITIES
     env.globals["ABILITY_NAMES"] = rules.ABILITY_NAMES
     env.globals["SKILLS"] = rules.SKILLS
@@ -48,8 +49,11 @@ def build_templates(compendium: Compendium) -> Jinja2Templates:
 def page(request: Request, name: str, **ctx):
     """Render a full page or partial with the app-wide context merged in."""
     app = request.app
+    from . import auth
     ctx.setdefault("role", getattr(request.state, "role", None))
     ctx["is_dm"] = ctx["role"] == "dm"
+    ctx["signed_in"] = auth.role_from_cookie(request, app.state.secret) is not None
+    ctx["unlocked"] = getattr(request.state, "unlocked", set())
     ctx["settings"] = app.state.settings
     ctx["sources"] = sorted(app.state.compendium.sources)
     return app.state.templates.TemplateResponse(request, name, ctx)

@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import auth
 from .compendium.loader import Compendium
-from .config import Settings, load_settings
+from .config import BASE_DIR, Settings, load_settings
 from .db import make_engine, make_session_factory
 from .templating import build_templates, page
 
@@ -25,9 +25,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     compendium = Compendium(settings.data_dir, settings.sources)
     engine = make_engine(settings.db_url)
+    secret = auth.load_secret(settings)
 
     app = FastAPI(title="Artificer's Manual", docs_url=None, redoc_url=None)
     app.state.settings = settings
+    app.state.secret = secret
     app.state.compendium = compendium
     app.state.engine = engine
     app.state.db = make_session_factory(engine)
@@ -37,7 +39,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.middleware("http")
     async def gate(request: Request, call_next):
         path = request.url.path
-        request.state.role = auth.role_for(request, settings)
+        request.state.role = auth.role_for(request, settings, secret)
+        request.state.unlocked = auth.unlocked_from_cookie(request, secret)
         if request.state.role is None and not path.startswith(_OPEN_PATHS):
             if request.method == "GET" and "hx-request" not in request.headers:
                 return RedirectResponse(f"/login?next={path}", status_code=303)
@@ -49,6 +52,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers.setdefault("Referrer-Policy", "same-origin")
         return response
 
+    @app.exception_handler(auth.Locked)
+    async def locked(request: Request, exc: auth.Locked):
+        target = f"/c/{exc.cid}/unlock"
+        if request.method == "GET" and "hx-request" not in request.headers:
+            return RedirectResponse(target, status_code=303)
+        resp = Response("This sheet needs its password", status_code=401)
+        resp.headers["HX-Redirect"] = target
+        return resp
+
+    @app.get("/rules")
+    async def rules(request: Request):
+        import markdown
+        path = BASE_DIR / "house_rules.md"
+        text = path.read_text(encoding="utf-8") if path.exists() else "# House rules\n\nNone written yet."
+        html = markdown.markdown(text, extensions=["tables"])
+        return page(request, "rules.html", body=html)
+
     @app.get("/healthz")
     async def healthz():
         return JSONResponse({"ok": True, "sources": sorted(compendium.sources),
@@ -56,8 +76,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/login")
     async def login_form(request: Request, next: str = "/"):
-        if request.state.role:
+        if request.state.role == "dm":
             return RedirectResponse(next if next.startswith("/") else "/", status_code=303)
+        if not settings.dm_password and not settings.table_password:
+            return RedirectResponse("/", status_code=303)
         return page(request, "login.html", error=None, next=next)
 
     @app.post("/login")
@@ -67,7 +89,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return page(request, "login.html", error="That's not it.", next=next)
         target = next if next.startswith("/") and not next.startswith("//") else "/"
         resp = RedirectResponse(target, status_code=303)
-        resp.set_cookie(auth.COOKIE, auth.token_for(role, settings), httponly=True, samesite="lax",
+        resp.set_cookie(auth.COOKIE, auth.token_for(role, secret), httponly=True, samesite="lax",
                         max_age=60 * 60 * 24 * 90)
         return resp
 
