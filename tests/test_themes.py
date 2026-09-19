@@ -26,7 +26,8 @@ def test_pages_carry_the_theme(client):
     assert 'class="card themed' in client.get("/").text and "--red: #4a6fd6" in client.get("/").text
     r = client.post(f"/c/{cid}/save", data={"theme": "lorbah"})
     assert r.headers.get("HX-Refresh") == "true"
-    assert 'style="--red: #9c3e30' in client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}").text
+    assert 'style="--red: #9c3e30' in html and 'data-theme="lorbah"' in html and "themes.css" in html
     client.post(f"/c/{cid}/save", data={"theme": "not-a-theme"})
     assert 'style="--red: #9c3e30' in client.get(f"/c/{cid}").text            # ignored
     assert "--red: #c0392b" not in client.get("/compendium").text              # only character pages are themed

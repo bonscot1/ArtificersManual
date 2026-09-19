@@ -1,0 +1,200 @@
+/* Character themes with texture. app.css sets the colours; this file changes the material.
+   Everything is CSS-only (gradients, inline SVG) so it works with no internet at the table. */
+
+/* =====================================================================================
+   IRON - built like one of his automatons: scrap-metal plates, brass rivets, blue light
+   ===================================================================================== */
+body[data-theme="iron"] {
+  --iron-plate: #1d1c18;
+  --iron-plate-2: #26241f;
+  --iron-edge: #4a3f27;
+  --iron-brass: #c9a35a;
+  --iron-blue: #3d8de8;
+  --iron-blue-soft: rgba(61, 141, 232, .45);
+  background:
+    radial-gradient(ellipse 60% 30% at 50% -4%, rgba(61, 141, 232, .28), transparent 70%),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, .018) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(25deg, rgba(0, 0, 0, .12) 0 1px, transparent 1px 7px),
+    linear-gradient(#151513, #0e0f0d);
+  background-attachment: fixed;
+}
+/* a faint cog in the corner */
+body[data-theme="iron"]::after {
+  content: ""; position: fixed; right: -90px; bottom: -90px; width: 360px; height: 360px; pointer-events: none; z-index: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(201, 163, 90, .16) 0 9deg, transparent 9deg 18deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 34%, #000 35% 52%, transparent 53% 60%, #000 61% 70%, transparent 71%);
+  mask: radial-gradient(circle, transparent 0 34%, #000 35% 52%, transparent 53% 60%, #000 61% 70%, transparent 71%);
+}
+body[data-theme="iron"] main { position: relative; z-index: 1; }
+
+/* windows: riveted plates */
+body[data-theme="iron"] .win {
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, .02) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--iron-plate-2), var(--iron-plate));
+  border: 1px solid var(--iron-edge);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), inset 0 0 0 1px rgba(0, 0, 0, .35), 0 3px 0 #0a0a09, 0 6px 12px rgba(0, 0, 0, .5);
+}
+body[data-theme="iron"] .win-title {
+  position: relative;
+  padding: .4rem 1.5rem;
+  color: var(--iron-brass);
+  background:
+    radial-gradient(circle at 9px 50%, var(--iron-brass) 0 1.6px, #5a4620 2.1px, transparent 3px),
+    radial-gradient(circle at calc(100% - 9px) 50%, var(--iron-brass) 0 1.6px, #5a4620 2.1px, transparent 3px),
+    linear-gradient(180deg, #3b3122, #24201a);
+  border-bottom: 1px solid #1b170f;
+  box-shadow: 0 1px 0 rgba(61, 141, 232, .55), 0 2px 10px rgba(61, 141, 232, .25);   /* the light strip */
+  text-shadow: 0 1px 0 #000;
+}
+body[data-theme="iron"] .win-body { position: relative; }
+body[data-theme="iron"] .win-body::before, body[data-theme="iron"] .win-body::after {
+  content: ""; position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #d9b76b, #6a5225 70%); box-shadow: 0 0 0 1px #14120d;
+}
+body[data-theme="iron"] .win-body::before { left: 5px; }
+body[data-theme="iron"] .win-body::after { right: 5px; }
+
+/* the HUD: a cut-cornered control plate */
+body[data-theme="iron"] .hud {
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, .02) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #272520, #1a1916);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--iron-edge), inset 0 0 0 3px #131210, inset 0 0 0 4px #3a3122;
+  padding: .9rem 1.1rem;
+}
+body[data-theme="iron"] .hud-stats > div {
+  background: linear-gradient(180deg, #111310, #0c0e0d);
+  border: 1px solid #2c2a22;
+  box-shadow: inset 0 0 12px rgba(61, 141, 232, .14), inset 0 -1px 0 rgba(61, 141, 232, .35);
+}
+body[data-theme="iron"] .hud-stats .v, body[data-theme="iron"] .ability .mod, body[data-theme="iron"] .row-val,
+body[data-theme="iron"] .strip .v { color: #8dc0ff; text-shadow: 0 0 8px var(--iron-blue-soft); }
+body[data-theme="iron"] .hud-hp .hpbar { background: #0b0d10; border-color: #2c2a22; box-shadow: inset 0 0 6px #000; }
+body[data-theme="iron"] .hud-hp .hpbar-fill { box-shadow: 0 0 10px currentColor; }
+body[data-theme="iron"] .modes > button[data-mode].on, body[data-theme="iron"] button.primary, body[data-theme="iron"] .btn,
+body[data-theme="iron"] button.cast {
+  background: linear-gradient(180deg, #4b93ec, #2b6fc4); border-color: #7db4ff; color: #fff;
+  box-shadow: 0 0 10px rgba(61, 141, 232, .5), inset 0 1px 0 rgba(255, 255, 255, .25); text-shadow: 0 1px 0 #1a3d6e;
+}
+body[data-theme="iron"] .pip { box-shadow: 0 0 7px var(--iron-blue-soft); }
+body[data-theme="iron"] .pip.used { box-shadow: none; }
+body[data-theme="iron"] .token.on { background: var(--iron-blue); border-color: #8dc0ff; box-shadow: 0 0 10px var(--iron-blue); }
+body[data-theme="iron"] .portrait { border: 3px solid #6a5225; box-shadow: 0 0 0 1px #c9a35a, 0 0 0 4px #14120d, 0 0 18px rgba(61, 141, 232, .5); border-radius: 3px; }
+body[data-theme="iron"] .tabs button.on, body[data-theme="iron"] .topbar nav a.on { border-bottom-color: var(--iron-blue); }
+body[data-theme="iron"] input, body[data-theme="iron"] select, body[data-theme="iron"] textarea {
+  background: #0d0f0e; border-color: #2c2a22; box-shadow: inset 0 1px 3px #000;
+}
+body[data-theme="iron"] input:focus, body[data-theme="iron"] textarea:focus, body[data-theme="iron"] select:focus {
+  border-color: var(--iron-blue); outline-color: var(--iron-blue); box-shadow: inset 0 1px 3px #000, 0 0 8px var(--iron-blue-soft);
+}
+body[data-theme="iron"] .glance { border-left-color: var(--iron-brass); }
+body[data-theme="iron"] .spell-level-head, body[data-theme="iron"] .feat-group-head { color: var(--iron-brass); }
+body[data-theme="iron"] .chip.on { background: #17324f; border-color: var(--iron-blue); }
+
+/* the party card version: a small plate with rivets */
+.card[data-theme="iron"] {
+  background: linear-gradient(180deg, #26241f, #1a1916); border-color: #4a3f27; border-left-color: #c9a35a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 2px 0 #0a0a09;
+}
+.card[data-theme="iron"] .card-name { text-shadow: 0 0 8px rgba(61, 141, 232, .35); }
+
+/* =====================================================================================
+   LOR' B'AH - Silverdeep stone: cracked rock, grain, spikes, something hot in the cracks
+   ===================================================================================== */
+body[data-theme="lorbah"] {
+  --rock: #1b1e23;
+  --rock-2: #252930;
+  --rock-edge: #4a505a;
+  --silver: #c3ccd6;
+  --ember: rgba(196, 80, 63, .55);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M12 18 L44 58 L38 96 L74 138 L64 178 L98 222 L92 258' stroke='%23c4503f' stroke-opacity='.16' stroke-width='3'/%3E%3Cpath d='M12 18 L44 58 L38 96 L74 138 L64 178 L98 222 L92 258' stroke='%23aeb6c0' stroke-opacity='.18' stroke-width='1'/%3E%3Cpath d='M150 0 L158 42 L136 74 L172 112 L162 152 L198 190 L188 236 L204 260' stroke='%23c4503f' stroke-opacity='.12' stroke-width='3'/%3E%3Cpath d='M150 0 L158 42 L136 74 L172 112 L162 152 L198 190 L188 236 L204 260' stroke='%23aeb6c0' stroke-opacity='.14' stroke-width='1'/%3E%3Cpath d='M206 30 L236 62 L222 100 L246 124' stroke='%23aeb6c0' stroke-opacity='.10' stroke-width='1'/%3E%3Cpath d='M0 190 L30 204 L58 232 L44 260' stroke='%23aeb6c0' stroke-opacity='.10' stroke-width='1'/%3E%3Cpath d='M98 60 L118 68 L112 90' stroke='%23aeb6c0' stroke-opacity='.08' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse 60% 30% at 50% 104%, rgba(196, 80, 63, .16), transparent 70%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .018) 0 1px, transparent 1px 5px),
+    linear-gradient(#171a1e, #101215);
+  background-attachment: fixed;
+}
+body[data-theme="lorbah"] .win {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='none' stroke='%23aeb6c0' stroke-opacity='.09' stroke-width='1' stroke-linecap='round'%3E%3Cpath d='M20 0 L36 30 L28 62 L54 92'/%3E%3Cpath d='M160 120 L184 150 L176 186 L200 220'/%3E%3Cpath d='M90 200 L118 214'/%3E%3C/g%3E%3C/svg%3E"),
+    repeating-radial-gradient(circle at 70% 30%, rgba(255, 255, 255, .016) 0 1px, transparent 1px 4px),
+    linear-gradient(170deg, var(--rock-2), var(--rock) 60%, #16191d);
+  border: 1px solid var(--rock-edge);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), inset 0 -1px 0 rgba(0, 0, 0, .6), 0 3px 0 #0a0b0d, 0 8px 14px rgba(0, 0, 0, .55);
+}
+/* the title bar is a slab with a spiked underside */
+body[data-theme="lorbah"] .win-title {
+  position: relative;
+  color: #e3e8ee;
+  background: linear-gradient(180deg, #3a3f48, #2a2f36);
+  border-bottom: 0;
+  margin-bottom: 8px;
+  text-shadow: 0 0 6px rgba(196, 80, 63, .6), 0 1px 0 #000;
+  letter-spacing: .08em;
+}
+body[data-theme="lorbah"] .win-title::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px;
+  background: linear-gradient(135deg, #2a2f36 4px, transparent 0), linear-gradient(-135deg, #2a2f36 4px, transparent 0);
+  background-size: 8px 8px; background-repeat: repeat-x;
+  filter: drop-shadow(0 1px 0 #0a0b0d);
+}
+body[data-theme="lorbah"] .win-title .muted { text-shadow: none; }
+
+/* the HUD: a spiked slab */
+body[data-theme="lorbah"] .hud {
+  position: relative; border: 1px solid var(--rock-edge); border-radius: 2px; margin-top: 10px;
+  background:
+    repeating-radial-gradient(circle at 20% 60%, rgba(255, 255, 255, .016) 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, #2a2f36, #1b1e23);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 3px 0 #0a0b0d, 0 8px 14px rgba(0, 0, 0, .55);
+}
+body[data-theme="lorbah"] .hud::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 9px;
+  background: linear-gradient(45deg, #2a2f36 4.5px, transparent 0), linear-gradient(-45deg, #2a2f36 4.5px, transparent 0);
+  background-size: 9px 9px; background-repeat: repeat-x;
+}
+body[data-theme="lorbah"] .hud-stats > div {
+  background: linear-gradient(180deg, #14171b, #0f1114); border-color: #3a3f47;
+  box-shadow: inset 0 0 0 1px #0a0b0d, inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+body[data-theme="lorbah"] .hud-stats .v, body[data-theme="lorbah"] .ability .mod, body[data-theme="lorbah"] .row-val,
+body[data-theme="lorbah"] .strip .v { color: var(--silver); text-shadow: 0 0 6px rgba(195, 204, 214, .35); }
+body[data-theme="lorbah"] .hud-hp .hpbar { background: #0b0c0e; border-color: #3a3f47; box-shadow: inset 0 0 6px #000; }
+body[data-theme="lorbah"] .hud-hp .hp-big { text-shadow: 0 0 10px rgba(196, 80, 63, .5); }
+body[data-theme="lorbah"] .modes > button[data-mode].on, body[data-theme="lorbah"] button.primary, body[data-theme="lorbah"] .btn,
+body[data-theme="lorbah"] button.cast {
+  background: linear-gradient(180deg, #b0483a, #7d2f26); border-color: #d66a5a; color: #fff;
+  box-shadow: 0 0 10px rgba(196, 80, 63, .4), inset 0 1px 0 rgba(255, 255, 255, .15); text-shadow: 0 1px 0 #3a1410;
+}
+body[data-theme="lorbah"] .modes > button[data-mode] { clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+body[data-theme="lorbah"] .pip { background: var(--silver); border-color: var(--silver); box-shadow: 0 0 5px rgba(195, 204, 214, .5); }
+body[data-theme="lorbah"] .pip.used { background: transparent; box-shadow: none; }
+body[data-theme="lorbah"] .token.on { background: var(--silver); border-color: #fff; box-shadow: 0 0 10px rgba(195, 204, 214, .7); }
+body[data-theme="lorbah"] .portrait {
+  border: 2px solid #8a939c; border-radius: 2px; outline: 1px solid #3a3f47; outline-offset: 3px;
+  box-shadow: 0 0 0 5px #14171b, 0 0 18px rgba(196, 80, 63, .35);
+}
+body[data-theme="lorbah"] .tabs button.on, body[data-theme="lorbah"] .topbar nav a.on { border-bottom-color: var(--silver); }
+body[data-theme="lorbah"] input, body[data-theme="lorbah"] select, body[data-theme="lorbah"] textarea {
+  background: #0f1114; border-color: #3a3f47; border-radius: 2px; box-shadow: inset 0 1px 3px #000;
+}
+body[data-theme="lorbah"] input:focus, body[data-theme="lorbah"] textarea:focus, body[data-theme="lorbah"] select:focus {
+  border-color: var(--silver); outline-color: var(--silver); box-shadow: inset 0 1px 3px #000, 0 0 6px rgba(195, 204, 214, .4);
+}
+body[data-theme="lorbah"] .glance { border-left-color: var(--silver); border-radius: 2px; }
+body[data-theme="lorbah"] .chip { border-radius: 2px; }
+body[data-theme="lorbah"] .chip.on { background: #3a1f1b; border-color: #c4503f; }
+body[data-theme="lorbah"] .spell-level-head, body[data-theme="lorbah"] .feat-group-head { color: var(--silver); }
+body[data-theme="lorbah"] .counter-row .k, body[data-theme="lorbah"] .slot-row .k { color: #e3e8ee; }
+
+.card[data-theme="lorbah"] {
+  position: relative; border-radius: 2px; border-color: #4a505a; border-left-color: #c4503f;
+  background: linear-gradient(170deg, #252930, #1b1e23);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 2px 0 #0a0b0d;
+}
+.card[data-theme="lorbah"] .card-name { color: #e3e8ee; text-shadow: 0 0 6px rgba(196, 80, 63, .6); }

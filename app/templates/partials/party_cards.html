@@ -5,7 +5,7 @@
 {% for s in sheets %}
   {% set ch = s.char %}
   {% set mine = is_dm or is_unlocked(ch) %}
-  <a class="card themed {% if not mine %}locked{% endif %}" href="/c/{{ ch.id }}" style="{{ s.theme_style }}">
+  <a class="card themed {% if not mine %}locked{% endif %}" href="/c/{{ ch.id }}" style="{{ s.theme_style }}" data-theme="{{ s.theme }}">
     <div class="card-head">
       {% if ch.token or ch.portrait %}<img class="token-img" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}
       <span class="card-name">{{ ch.name }}</span>

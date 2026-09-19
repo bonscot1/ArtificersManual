@@ -1,7 +1,7 @@
 {% if not sheets %}<p class="muted small">Nobody else in the party yet.</p>{% endif %}
 {% for s in sheets %}
 {% set ch = s.char %}
-<div class="glance" style="{{ s.theme_style }}">
+<div class="glance" style="{{ s.theme_style }}" data-theme="{{ s.theme }}">
   <div class="glance-head">
     {% if ch.token or ch.portrait %}<img class="token-img" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}
     <span class="glance-name">{{ ch.name }}</span>

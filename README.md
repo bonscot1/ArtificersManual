@@ -34,7 +34,10 @@ session notes. Everything else is edited on the full sheet via **Edit sheet**.
 
 Every character page is coloured by class (arcane blue for wizards, copper for artificers,
 eldritch purple for warlocks...); the sheet's Theme picker overrides that, and `app/themes.py`
-holds the palettes, including hand-made ones for Iron and Lor' B'ah drawn from their art. A
+holds the palettes. Two themes go further in `app/static/themes.css`: **Iron** is built like
+his automatons - brushed scrap metal, riveted plates, blue light strips, a cog in the corner -
+and **Lor' B'ah** is Silverdeep stone - cracked rock with something hot in the fissures, grain,
+spiked slab edges. Both are pure CSS, so they work offline. A
 portrait and a round token can be uploaded on the sheet (stored in `data/portraits/`,
 gitignored); the portrait heads the play view, the token sits on the party card.
 

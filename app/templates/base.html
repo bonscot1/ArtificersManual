@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Artificer's Manual{% endblock %}</title>
   <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/themes.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
-<body hx-boost="false" {% if theme_style %}style="{{ theme_style }}"{% endif %}>
+<body hx-boost="false" {% if theme_style %}style="{{ theme_style }}" data-theme="{{ sheet.theme }}"{% endif %}>
 <header class="topbar">
   <a class="brand" href="/">Artificer's Manual</a>
   <nav>
