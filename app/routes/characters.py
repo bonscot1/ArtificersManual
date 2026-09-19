@@ -13,7 +13,7 @@ from sqlalchemy import select
 from .. import auth
 from ..compendium import format as fmt
 from ..compendium import rules
-from ..db import Character
+from ..db import Character, Message, _now
 from ..sheet import build_sheet, cast_options, default_hp
 from ..themes import THEMES
 from ..templating import page
@@ -799,3 +799,50 @@ async def companions(request: Request, cid: int):
         if op == "update":
             return _toast(Response(status_code=204))
         return _partial(request, "partials/companions.html", ch)
+
+
+# ----------------------------------------------------------------- messages from the DM
+def _next_message(session, cid: int):
+    return session.scalars(select(Message).where(Message.character_id == cid, Message.status == "pending")
+                           .order_by(Message.id)).first()
+
+
+@router.get("/c/{cid}/inbox")
+async def inbox(request: Request, cid: int, shown: str = ""):
+    """The oldest unread message as a popup, or nothing (204) so the page stays quiet.
+    `shown` is the message already on screen: leave it alone so a half-typed reply survives."""
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        m = _next_message(session, cid)
+        if not m or str(m.id) == shown:
+            return Response(status_code=204)
+        waiting = session.scalars(select(Message).where(Message.character_id == cid, Message.status == "pending")).all()
+        return page(request, "partials/inbox_modal.html", char=ch, m=m, more=len(waiting) - 1)
+
+
+@router.post("/c/{cid}/inbox/{mid}")
+async def inbox_reply(request: Request, cid: int, mid: int):
+    form = await request.form()
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        m = session.get(Message, mid)
+        if not m or m.character_id != cid:
+            raise HTTPException(404, "No such message")
+        if m.status == "pending":
+            if m.kind == "choice":
+                pick = str(form.get("answer", ""))
+                if pick not in (m.options or []):
+                    return page(request, "partials/inbox_modal.html", char=ch, m=m, more=0, error="Pick one of the options.")
+                m.answer = pick
+            elif m.kind == "prompt":
+                reply = str(form.get("answer", "")).strip()[:4000]
+                if not reply:
+                    return page(request, "partials/inbox_modal.html", char=ch, m=m, more=0, error="Type a reply first.")
+                m.answer = reply
+            m.status, m.answered_at = "done", _now()
+            session.commit()
+        nxt = _next_message(session, cid)
+        if not nxt:
+            return Response(status_code=200, content="")
+        waiting = session.scalars(select(Message).where(Message.character_id == cid, Message.status == "pending")).all()
+        return page(request, "partials/inbox_modal.html", char=ch, m=nxt, more=len(waiting) - 1)

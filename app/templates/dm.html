@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}DM screen - Artificer's Manual{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+<div class="page-head"><h1>DM screen</h1><span class="muted">the party with the numbers, and a line to each player</span></div>
+
+<section class="win">
+  <div class="win-title">The party</div>
+  <div class="win-body" id="dm-board" hx-get="/dm/board" hx-trigger="every 5s, refresh" hx-swap="innerHTML">
+    {% include "partials/dm_board.html" %}
+  </div>
+</section>
+
+<div class="two-col dm-msg">
+  <section class="win">
+    <div class="win-title">Send a message</div>
+    <form class="win-body stack" hx-post="/dm/messages" hx-target="#dm-outbox" hx-swap="innerHTML" hx-on::after-request="if (event.detail.successful && event.detail.xhr.responseText.indexOf('sent-ok') > -1) { this.reset(); this.querySelector('[name=text]').focus(); }">
+      <div class="recipients">
+        <span class="k">To</span>
+        {% for s in sheets %}<label class="check"><input type="checkbox" name="to" value="{{ s.char.id }}"> {{ s.char.name }}</label>{% endfor %}
+        <button type="button" class="link" onclick="this.closest('.recipients').querySelectorAll('input').forEach(i => i.checked = true)">everyone</button>
+      </div>
+      <div class="kinds">
+        <label class="check"><input type="radio" name="kind" value="note" checked> Note <span class="muted small">they read it and click OK</span></label>
+        <label class="check"><input type="radio" name="kind" value="choice"> Choice <span class="muted small">they pick one option</span></label>
+        <label class="check"><input type="radio" name="kind" value="prompt"> Question <span class="muted small">they type a reply</span></label>
+      </div>
+      <textarea name="text" rows="3" placeholder="What they see. Only the people you tick get it." required></textarea>
+      <textarea name="options" rows="3" placeholder="Choice options, one per line - e.g.&#10;The sword&#10;The bow"></textarea>
+      <button class="primary">Send</button>
+    </form>
+  </section>
+  <section class="win">
+    <div class="win-title">Sent <span class="muted small">answers arrive here as they come in</span></div>
+    <div class="win-body" id="dm-outbox" hx-get="/dm/outbox" hx-trigger="every 3s" hx-swap="innerHTML">
+      {% include "partials/dm_outbox.html" %}
+    </div>
+  </section>
+</div>
+{% endblock %}

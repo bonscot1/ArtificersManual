@@ -1,0 +1,29 @@
+<table class="list dm-table">
+  <thead><tr><th></th><th>Character</th><th>HP</th><th>AC</th><th>PP</th><th>Conditions</th><th>Inspiration</th><th>Concentrating</th><th></th></tr></thead>
+  <tbody>
+  {% for s in sheets %}
+  {% set ch = s.char %}
+  <tr style="{{ s.theme_style }}">
+    <td>{% if ch.token or ch.portrait %}<img class="token-img" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}</td>
+    <td><a href="/c/{{ ch.id }}"><b style="color: var(--red-2)">{{ ch.name }}</b></a><br><span class="muted small">{{ s.cls.name if s.cls else '' }} {{ ch.level }}{% if ch.player %} &middot; {{ ch.player }}{% endif %}</span></td>
+    <td class="hp-cell">
+      <b style="color: {{ s.seen.colour }}">{{ ch.hp_current }}</b><span class="muted">/{{ ch.hp_max }}</span>{% if ch.hp_temp %} <span class="hp-temp">+{{ ch.hp_temp }}</span>{% endif %}
+      <div class="muted small">{{ s.seen.health }}</div>
+      {% for c in s.companions if c.summoned %}<div class="small"><span class="muted">{{ c.name }}</span> <b style="color: {{ c.seen.colour }}">{{ c.hp_current }}</b><span class="muted">/{{ c.hp_max }}</span></div>{% endfor %}
+      {% if ch.hp_current == 0 %}<div class="small" style="color: var(--red-2)">death saves {{ ch.death_success }} / {{ ch.death_fail }}</div>{% endif %}
+    </td>
+    <td>{{ ch.ac }}</td>
+    <td>{{ s.passive_perception }}</td>
+    <td class="chips">
+      {% for name in s.condition_names %}<button class="chip {% if name in ch.conditions %}on{% endif %}" hx-post="/c/{{ ch.id }}/conditions" hx-vals='{"name": "{{ name }}"}' hx-swap="none" hx-on::after-request="htmx.trigger('#dm-board', 'refresh')">{{ name }}</button>{% endfor %}
+    </td>
+    <td>
+      {% if ch.inspiration %}<span class="token on"></span> <button class="link muted" hx-post="/c/{{ ch.id }}/inspiration" hx-vals='{"op": "revoke"}' hx-swap="none" hx-on::after-request="htmx.trigger('#dm-board', 'refresh')">revoke</button>
+      {% else %}<button class="link" hx-post="/c/{{ ch.id }}/inspiration" hx-vals='{"op": "grant"}' hx-swap="none" hx-on::after-request="htmx.trigger('#dm-board', 'refresh')">grant</button>{% endif %}
+    </td>
+    <td class="muted small">{{ ch.concentration or '' }}</td>
+    <td class="small"><a href="/c/{{ ch.id }}">play</a> &middot; <a href="/c/{{ ch.id }}/sheet">sheet</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>

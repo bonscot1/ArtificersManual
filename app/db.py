@@ -141,3 +141,19 @@ def migrate(engine) -> list[str]:
                 conn.exec_driver_sql(ddl)
                 added.append(f"{table.name}.{column.name}")
     return added
+
+
+class Message(Base):
+    """Something the DM sent a character: a note to dismiss, a choice to make, a question to answer."""
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    batch: Mapped[str] = mapped_column(String(32), default="")        # one send to several characters
+    character_id: Mapped[int] = mapped_column(Integer, index=True)
+    kind: Mapped[str] = mapped_column(String(10), default="note")      # note | choice | prompt
+    text: Mapped[str] = mapped_column(Text, default="")
+    options: Mapped[list] = mapped_column(JSON, default=list)          # for a choice
+    status: Mapped[str] = mapped_column(String(10), default="pending") # pending | done | cancelled
+    answer: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -100,9 +100,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         resp.delete_cookie(auth.COOKIE)
         return resp
 
-    from .routes import characters, compendium as compendium_routes
+    from .routes import characters, compendium as compendium_routes, dm
     app.include_router(characters.router)
     app.include_router(compendium_routes.router)
+    app.include_router(dm.router)
     return app
 
 

@@ -355,3 +355,26 @@ details.all-spells > summary { cursor: pointer; color: var(--ink-2); }
 .hp-big.small.down { color: var(--red-2); }
 .companion-hp .hp-actions input { width: 3.6rem; }
 .companion-edit { grid-template-columns: 1.4fr 1.6fr .5fr .5fr 2fr auto; margin-top: .3rem; }
+
+/* ---- DM screen + messages */
+.dm-table td { vertical-align: middle; }
+.dm-table .chips { max-width: 28rem; }
+.dm-table .chip { font-size: .7rem; padding: .05rem .45rem; }
+.hp-cell b { font-size: 1.1rem; }
+.dm-msg { margin-top: .8rem; }
+.recipients, .kinds { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; }
+.recipients .k, .kinds .k { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; }
+.good-text { color: #8ed08a; }
+.sent-msg { border-top: 1px solid var(--line); padding: .5rem 0; }
+.sent-msg:first-of-type { border-top: 0; }
+.sent-head { display: flex; gap: .5rem; align-items: center; }
+.sent-text { white-space: pre-line; margin: .2rem 0; }
+.sent-to { list-style: none; margin: .2rem 0 0; padding: 0; font-size: .88rem; }
+.sent-to li { display: flex; gap: .5rem; align-items: baseline; }
+.answer { color: var(--gold); }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .7); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1rem; }
+.modal { background: var(--bg-2); border: 1px solid var(--red); border-radius: 6px; box-shadow: 0 0 40px rgba(0, 0, 0, .8); width: min(34rem, 100%); padding: 1rem 1.2rem 1.2rem; }
+.modal-head { color: var(--red-2); text-transform: uppercase; letter-spacing: .06em; font-size: .78rem; font-weight: 600; margin-bottom: .6rem; display: flex; justify-content: space-between; gap: 1rem; }
+.modal-text { font-size: 1.05rem; line-height: 1.5; white-space: pre-line; margin-bottom: .9rem; }
+.modal-options { display: flex; flex-direction: column; gap: .4rem; }
+button.cast-opt.big { font-size: 1rem; padding: .5rem .9rem; text-align: left; }

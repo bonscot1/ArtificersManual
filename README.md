@@ -57,6 +57,20 @@ the numbers. Your own card keeps its numbers.
 AC, notes) and on the Combat screen: summon or dismiss, damage and heal. While summoned they
 appear in the party's view with the same phrases ("Iron's Homunculus is lightly wounded").
 
+## DM screen
+
+**DM screen** (top right when signed in as DM) shows the whole party with the numbers - HP,
+AC, passive perception, conditions to toggle, inspiration to grant - refreshing every few
+seconds, and a line to each player:
+
+- **Note** - a private message they read and click OK.
+- **Choice** - options one per line ("The sword / The bow"); they click one.
+- **Question** - they type a reply.
+
+Tick who it goes to (or everyone). It pops up over whatever page that character has open within
+a couple of seconds and stays until they act on it; further messages queue behind it. Answers
+appear in the Sent list as they come in; a pending message can be cancelled.
+
 Removing an item from the equipment list moves it to a **Removed** list underneath, with
 "put back" - so a potion drunk in error, or a sword the DM hands back, is one click.
 

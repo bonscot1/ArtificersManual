@@ -15,9 +15,10 @@
     <a href="/new" {% if request.url.path == '/new' %}class="on"{% endif %}>New character</a>
     <a href="/compendium" {% if request.url.path.startswith('/compendium') %}class="on"{% endif %}>Compendium</a>
     <a href="/rules" {% if request.url.path == '/rules' %}class="on"{% endif %}>Rules</a>
+    {% if is_dm %}<a href="/dm" {% if request.url.path.startswith('/dm') %}class="on"{% endif %}>DM</a>{% endif %}
   </nav>
   <div class="who">
-    {% if is_dm %}<span class="pill pill-dm">DM</span>{% elif settings.dm_password %}<a class="pill" href="/login">DM sign in</a>{% endif %}
+    {% if is_dm %}<a class="pill pill-dm" href="/dm">DM screen</a>{% elif settings.dm_password %}<a class="pill" href="/login">DM sign in</a>{% endif %}
     {% if signed_in %}
     <form method="post" action="/logout" class="inline"><button class="link">log out</button></form>
     {% endif %}
@@ -27,6 +28,9 @@
 {% block content %}{% endblock %}
 </main>
 <div id="toast" class="toast" hidden></div>
+{% if sheet and sheet.char and not is_dm %}
+<div id="inbox" hx-get="/c/{{ sheet.char.id }}/inbox" hx-trigger="load, every 2s" hx-swap="innerHTML" hx-vals='js:{shown: (document.querySelector("#inbox .modal") || {dataset: {}}).dataset.mid || ""}'></div>
+{% endif %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var toast = document.getElementById("toast"), timer;
