@@ -11,6 +11,7 @@ from .compendium import format as fmt
 from .compendium import rules
 from .compendium.loader import Compendium, entity_url, key, wikidot_url
 from .compendium.render import Renderer
+from .themes import theme_choices
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -39,6 +40,7 @@ def build_templates(compendium: Compendium) -> Jinja2Templates:
     env.filters["ekey"] = lambda e: key(e["name"], e["source"])
     env.globals["entity_url"] = entity_url
     env.globals["wikidot_url"] = wikidot_url
+    env.globals["theme_choices"] = theme_choices
     env.globals["ABILITIES"] = rules.ABILITIES
     env.globals["ABILITY_NAMES"] = rules.ABILITY_NAMES
     env.globals["SKILLS"] = rules.SKILLS
@@ -53,7 +55,9 @@ def page(request: Request, name: str, **ctx):
     ctx.setdefault("role", getattr(request.state, "role", None))
     ctx["is_dm"] = ctx["role"] == "dm"
     ctx["signed_in"] = auth.role_from_cookie(request, app.state.secret, app.state.settings) is not None
-    ctx["unlocked"] = getattr(request.state, "unlocked", set())
+    ctx["is_unlocked"] = lambda ch: auth.is_unlocked(request, ch, app.state.secret)
     ctx["settings"] = app.state.settings
+    sheet = ctx.get("sheet")
+    ctx["theme_style"] = sheet["theme_style"] if isinstance(sheet, dict) and "theme_style" in sheet else ""
     ctx["sources"] = sorted(app.state.compendium.sources)
     return app.state.templates.TemplateResponse(request, name, ctx)

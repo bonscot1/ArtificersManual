@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import RedirectResponse, Response
+from starlette.datastructures import UploadFile
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from sqlalchemy import select
 
 from .. import auth
@@ -13,6 +15,7 @@ from ..compendium import format as fmt
 from ..compendium import rules
 from ..db import Character
 from ..sheet import build_sheet, cast_options, default_hp
+from ..themes import THEMES
 from ..templating import page
 
 router = APIRouter()
@@ -47,14 +50,15 @@ def _fetch(session, cid: int) -> Character:
 def _load(request: Request, session, cid: int) -> Character:
     """The character, once this browser has claimed it (or the DM is asking)."""
     ch = _fetch(session, cid)
-    if request.state.role != "dm" and cid not in request.state.unlocked:
+    if request.state.role != "dm" and not auth.is_unlocked(request, ch, request.app.state.secret):
         raise auth.Locked(cid)
     return ch
 
 
-def _set_unlock_cookie(request: Request, resp: Response, cid: int) -> Response:
-    ids = set(request.state.unlocked) | {cid}
-    resp.set_cookie(auth.CHAR_COOKIE, auth.unlock_cookie_value(ids, request.app.state.secret),
+def _set_unlock_cookie(request: Request, resp: Response, ch: Character) -> Response:
+    tokens = dict(request.state.unlocked)
+    tokens[ch.id] = auth.unlock_token(ch.id, ch.password_hash or "", request.app.state.secret)
+    resp.set_cookie(auth.CHAR_COOKIE, auth.unlock_cookie_value(tokens),
                     httponly=True, samesite="lax", max_age=60 * 60 * 24 * 365)
     return resp
 
@@ -169,7 +173,7 @@ def _safe_next(value: str, cid: int) -> str:
 async def unlock_form(request: Request, cid: int, next: str = ""):
     with _db(request) as session:
         ch = _fetch(session, cid)
-        if request.state.role == "dm" or cid in request.state.unlocked:
+        if request.state.role == "dm" or auth.is_unlocked(request, ch, request.app.state.secret):
             return RedirectResponse(_safe_next(next, cid), status_code=303)
         return page(request, "unlock.html", ch=ch, mode="enter" if ch.password_hash else "set", error=None, next=next)
 
@@ -190,7 +194,8 @@ async def unlock(request: Request, cid: int):
         elif not auth.verify_password(password, ch.password_hash):
             return page(request, "unlock.html", ch=ch, mode="enter", next=target,
                         error="That's not it. Ask the DM to reset it if it's forgotten.")
-    return _set_unlock_cookie(request, RedirectResponse(target, status_code=303), cid)
+        session.refresh(ch)
+    return _set_unlock_cookie(request, RedirectResponse(target, status_code=303), ch)
 
 
 @router.post("/c/{cid}/password/reset")
@@ -274,6 +279,11 @@ async def save(request: Request, cid: int):
             ch.inspiration = "inspiration" in form
         if "currency" in lists:
             ch.currency = {k: _clamp(form.get(f"cur_{k}"), 0, 999_999, 0) for k in ("cp", "sp", "ep", "gp", "pp")}
+        if "theme" in form:
+            theme = str(form["theme"])
+            if theme == "" or theme in THEMES:
+                ch.theme = theme
+                structural = True          # the whole page recolours
         if "notes_dm" in form:
             _require_dm(request)
             ch.notes_dm = str(form["notes_dm"])[:40000]
@@ -672,3 +682,46 @@ async def inspiration(request: Request, cid: int):
         session.commit()
         resp = _partial(request, "partials/hud.html", ch)
     return _toast(resp, text)
+
+
+# ----------------------------------------------------------------- art: a portrait for the page, a token for cards
+ART_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
+
+
+def _art_dir(request: Request) -> Path:
+    """Next to the database, so a test database gets its own folder."""
+    return Path(request.app.state.settings.db_path).parent / "portraits"
+
+
+@router.get("/c/{cid}/art/{kind}")
+async def art(request: Request, cid: int, kind: str):
+    with _db(request) as session:
+        ch = _fetch(session, cid)           # tokens show on the party page, so no unlock needed
+        name = ch.portrait if kind == "portrait" else ch.token or ch.portrait
+    path = _art_dir(request) / Path(name).name if name else None
+    if not path or not path.exists():
+        raise HTTPException(404, "No art")
+    return FileResponse(path, headers={"Cache-Control": "no-cache"})
+
+
+@router.post("/c/{cid}/art")
+async def upload_art(request: Request, cid: int):
+    form = await request.form()
+    kind = "token" if str(form.get("kind")) == "token" else "portrait"
+    file = form.get("file")
+    if not isinstance(file, UploadFile) or file.content_type not in ART_TYPES:
+        return _toast(Response(status_code=204), "Use a PNG, JPG or WebP")
+    data = await file.read()
+    if len(data) > 8 * 1024 * 1024:
+        return _toast(Response(status_code=204), "Keep it under 8 MB")
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        art_dir = _art_dir(request)
+        art_dir.mkdir(parents=True, exist_ok=True)
+        name = f"{cid}-{kind}{ART_TYPES[file.content_type]}"
+        (art_dir / name).write_bytes(data)
+        setattr(ch, kind, name)
+        session.commit()
+    resp = Response(status_code=204)
+    resp.headers["HX-Refresh"] = "true"
+    return resp

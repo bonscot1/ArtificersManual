@@ -41,7 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         path = request.url.path
         settings.refresh()          # a saved settings.json applies straight away
         request.state.role = auth.role_for(request, settings, secret)
-        request.state.unlocked = auth.unlocked_from_cookie(request, secret)
+        request.state.unlocked = auth.unlocked_from_cookie(request)
         if request.state.role is None and not path.startswith(_OPEN_PATHS):
             if request.method == "GET" and "hx-request" not in request.headers:
                 return RedirectResponse(f"/login?next={path}", status_code=303)

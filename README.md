@@ -26,9 +26,17 @@ connections - allow it on private networks.
 
 Opening a character lands on the **play view**: a HUD (hit points with damage/heal, AC,
 initiative, speed, passive perception, spell DC, inspiration, concentration, conditions) over
-tabs - Actions, Spells, Stats, Features, Equipment, Notes. Players change what changes at the
-table: damage and healing, hit dice and rests, resource pips, casting, preparing spells,
-equipment and coins, session notes. Everything else is edited on the full sheet via **Edit sheet**.
+three screens - **Combat** (attacks, spells, resources, saves, rests), **Roleplay** (skills,
+notes, equipment, features, backstory) and **Everything** (every section, one tab at a time).
+The screen is remembered per character. Players change what changes at the table: damage and
+healing, hit dice and rests, resource pips, casting, preparing spells, equipment and coins,
+session notes. Everything else is edited on the full sheet via **Edit sheet**.
+
+Every character page is coloured by class (arcane blue for wizards, copper for artificers,
+eldritch purple for warlocks...); the sheet's Theme picker overrides that, and `app/themes.py`
+holds the palettes, including hand-made ones for Iron and Lor' B'ah drawn from their art. A
+portrait and a round token can be uploaded on the sheet (stored in `data/portraits/`,
+gitignored); the portrait heads the play view, the token sits on the party card.
 
 **Cast** on a spell offers the slot levels that still have a slot (or the pact slot, or ritual
 for ritual spells), spends it, and puts concentration spells in the HUD with an "end" button.

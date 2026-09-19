@@ -22,6 +22,9 @@ class Character(Base):
     name: Mapped[str] = mapped_column(String(120))
     player: Mapped[str] = mapped_column(String(120), default="")
     password_hash: Mapped[str] = mapped_column(String(200), default="")   # empty = nobody has claimed this sheet yet
+    theme: Mapped[str] = mapped_column(String(40), default="")             # "" = the class's theme
+    portrait: Mapped[str] = mapped_column(String(120), default="")         # file in data/portraits/
+    token: Mapped[str] = mapped_column(String(120), default="")            # round token for cards
 
     race_key: Mapped[str] = mapped_column(String(160), default="")
     subrace_key: Mapped[str] = mapped_column(String(160), default="")

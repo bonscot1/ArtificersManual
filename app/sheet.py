@@ -12,6 +12,7 @@ from .compendium import format as fmt
 from .compendium import rules
 from .compendium.loader import Compendium, entity_url
 from .db import Character
+from .themes import theme_key, theme_style
 
 # race entries that describe rather than grant something
 _RACE_FLUFF = {"Age", "Alignment", "Size", "Languages", "Speed", "Creature Type", "Life Span"}
@@ -101,7 +102,10 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
     ready_levels: dict[int, list] = {}
     for r in castable:
         ready_levels.setdefault(r["level"], []).append(r)
+    theme = theme_key(ch, cls)
     return {
+        "theme": theme,
+        "theme_style": theme_style(theme),
         "ready_levels": ready_levels,
         "inventory_links": inventory_links,
         "feats": feat_rows,

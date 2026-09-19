@@ -46,8 +46,28 @@
     <label>Alignment <input name="alignment" value="{{ ch.alignment }}" maxlength="40"></label>
     <label>XP <input type="number" name="xp" value="{{ ch.xp }}" min="0" {% if not is_dm %}disabled title="the DM awards XP"{% endif %}></label>
     <label class="name">Appearance <input name="appearance" value="{{ ch.appearance }}" maxlength="300" placeholder="age, height, weight, eyes, skin, hair"></label>
+    <label>Theme
+      <select name="theme">
+        {% for key, label in theme_choices() %}<option value="{{ key }}" {% if key == ch.theme %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
   </div>
 </form>
+<section class="win">
+  <div class="win-title">Art <span class="muted small">portrait on the play view, token on the party cards</span></div>
+  <div class="win-body art-row">
+    {% if ch.portrait %}<img class="portrait small" src="/c/{{ ch.id }}/art/portrait" alt="">{% endif %}
+    <form hx-post="/c/{{ ch.id }}/art" hx-encoding="multipart/form-data" hx-trigger="change" hx-swap="none">
+      <input type="hidden" name="kind" value="portrait">
+      <label>Portrait <input type="file" name="file" accept="image/png,image/jpeg,image/webp"></label>
+    </form>
+    {% if ch.token %}<img class="token-img big" src="/c/{{ ch.id }}/art/token" alt="">{% endif %}
+    <form hx-post="/c/{{ ch.id }}/art" hx-encoding="multipart/form-data" hx-trigger="change" hx-swap="none">
+      <input type="hidden" name="kind" value="token">
+      <label>Token <input type="file" name="file" accept="image/png,image/jpeg,image/webp"></label>
+    </form>
+  </div>
+</section>
 
 <div class="sheet-grid">
   <div class="col">

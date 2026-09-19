@@ -100,17 +100,29 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(candidate, digest)
 
 
-def unlocked_from_cookie(request: Request, secret: bytes) -> set[int]:
-    raw = request.cookies.get(CHAR_COOKIE, "")
-    ids, _, sig = raw.partition(".")
-    if not ids or not hmac.compare_digest(_sign(secret, "chars:" + ids), sig):
-        return set()
-    return {int(x) for x in ids.split(",") if x.isdigit()}
+def unlock_token(cid: int, password_hash: str, secret: bytes) -> str:
+    """Tied to the character's current password: a reset, or a new character reusing the
+    id, makes every old browser's token worthless."""
+    return _sign(secret, f"unlock:{cid}:{password_hash}")[:24]
 
 
-def unlock_cookie_value(ids: set[int], secret: bytes) -> str:
-    joined = ",".join(str(i) for i in sorted(ids))
-    return f"{joined}.{_sign(secret, 'chars:' + joined)}"
+def unlocked_from_cookie(request: Request) -> dict[int, str]:
+    """{character id: token} as the browser presents them - verified per character by is_unlocked."""
+    out: dict[int, str] = {}
+    for part in request.cookies.get(CHAR_COOKIE, "").split(","):
+        cid, _, token = part.partition(":")
+        if cid.isdigit() and token:
+            out[int(cid)] = token
+    return out
+
+
+def is_unlocked(request: Request, character, secret: bytes) -> bool:
+    token = getattr(request.state, "unlocked", {}).get(character.id, "")
+    return bool(token) and hmac.compare_digest(token, unlock_token(character.id, character.password_hash or "", secret))
+
+
+def unlock_cookie_value(tokens: dict[int, str]) -> str:
+    return ",".join(f"{cid}:{tok}" for cid, tok in sorted(tokens.items()))
 
 
 class Locked(Exception):

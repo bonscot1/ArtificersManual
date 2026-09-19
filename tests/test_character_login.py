@@ -58,7 +58,9 @@ def test_forged_unlock_cookie_is_ignored(tmp_path):
     cid = int(owner.post("/new", data=WIZARD, follow_redirects=False).headers["location"].split("/")[2])
     owner.post(f"/c/{cid}/unlock", data={"password": "owlbear"})
     thief = _player(app)
-    thief.cookies.set("am_chars", f"{cid}.0000deadbeef")
+    thief.cookies.set("am_chars", f"{cid}:0000deadbeef0000deadbeef")
+    assert thief.get(f"/c/{cid}", follow_redirects=False).status_code == 303
+    thief.cookies.set("am_chars", f"{cid}.0000deadbeef")            # the old cookie format
     assert thief.get(f"/c/{cid}", follow_redirects=False).status_code == 303
 
 
@@ -78,8 +80,10 @@ def test_dm_opens_everything_and_can_reset(tmp_path):
     assert dm.post(f"/c/{cid}/password/reset").status_code == 204
     newcomer = _player(app)
     assert "Nobody has claimed this sheet yet" in newcomer.get(f"/c/{cid}/unlock").text
-    owner_again = owner.get(f"/c/{cid}")
-    assert owner_again.status_code == 200          # the original browser's unlock cookie still works
+    r = owner.get(f"/c/{cid}", follow_redirects=False)
+    assert r.status_code == 303                    # a reset kicks the old browser out as well
+    owner.post(f"/c/{cid}/unlock", data={"password": "fresh"})
+    assert owner.get(f"/c/{cid}", follow_redirects=False).status_code == 200
 
 
 def test_party_page_shows_who_is_claimed(tmp_path):

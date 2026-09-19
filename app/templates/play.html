@@ -6,7 +6,8 @@
 <div class="sheet play" id="sheet" data-cid="{{ ch.id }}">
 
 <div class="play-head">
-  <div>
+  {% if ch.portrait %}<img class="portrait" src="/c/{{ ch.id }}/art/portrait" alt="">{% endif %}
+  <div class="play-title">
     <h1>{{ ch.name }}</h1>
     <div class="muted">
       {{ sheet.race.name if sheet.race else 'No race' }} &middot;
@@ -20,146 +21,175 @@
 
 {% include "partials/hud.html" %}
 
-<nav class="tabs" id="tabs">
-  <button data-tab="actions" class="on">Actions</button>
-  {% if sheet.spellcasting %}<button data-tab="spells">Spells</button>{% endif %}
-  <button data-tab="stats">Stats</button>
-  <button data-tab="features">Features</button>
-  <button data-tab="gear">Equipment</button>
-  <button data-tab="notes">Notes</button>
+<nav class="modes" id="modes">
+  <button data-mode="combat" title="attacks, spells, resources, saves">Combat</button>
+  <button data-mode="rp" title="skills, notes, equipment, features">Roleplay</button>
+  <button data-mode="all" title="every section, one tab at a time">Everything</button>
+  <span class="tabs inline" id="tabs">
+    <button data-tab="actions">Actions</button>
+    {% if sheet.spellcasting %}<button data-tab="spells">Spells</button>{% endif %}
+    <button data-tab="stats">Stats</button>
+    <button data-tab="features">Features</button>
+    <button data-tab="gear">Equipment</button>
+    <button data-tab="notes">Notes</button>
+  </span>
 </nav>
 
-<div class="tab-pane on" data-pane="actions">
-  <div class="two-col">
-    <div>
-      {% include "partials/attacks.html" %}
-      {% include "partials/counters.html" %}
-    </div>
-    <div>
-      <section class="win">
-        <div class="win-title">Rest &amp; recovery</div>
-        <div class="win-body hp-foot">
-          {% if sheet.hit_die %}
-          <form class="inline" hx-post="/c/{{ ch.id }}/hp" hx-target="#hud" hx-swap="outerHTML">
-            <input type="hidden" name="action" value="hit_die"><input type="hidden" name="view" value="play">
-            <span class="k">Hit dice</span>
-            <button name="delta" value="1" class="ghost">spend d{{ sheet.hit_die }} ({{ sheet.hit_dice_left }}/{{ ch.level }} left)</button>
-            <button name="delta" value="-1" class="link">undo</button>
-          </form>
-          {% endif %}
-          <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none">
-            <input type="hidden" name="kind" value="short">
-            <button class="ghost">Short rest</button>
-            <span class="muted small">pact slots and short-rest resources back</span>
-          </form>
-          <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none" hx-confirm="Long rest: full HP, all slots and resources back, half your hit dice back?">
-            <input type="hidden" name="kind" value="long">
-            <button class="ghost">Long rest</button>
-          </form>
-        </div>
-      </section>
-      {% if ch.features_custom %}
-      <section class="win">
-        <div class="win-title">Player notes on abilities</div>
-        <div class="win-body prose small">{{ ch.features_custom }}</div>
-      </section>
-      {% endif %}
-    </div>
-  </div>
-</div>
+<div class="panes" id="panes">
 
-{% if sheet.spellcasting %}
-<div class="tab-pane" data-pane="spells">
-  <section class="win">
-    <div class="win-title">Spellcasting <span class="muted small">Cast spends the slot; concentration shows in the bar above</span></div>
-    <div class="win-body">
-      {% include "partials/spells_play.html" %}
-    </div>
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="1">
+    {% include "partials/attacks.html" %}
   </section>
-</div>
-{% endif %}
 
-<div class="tab-pane" data-pane="stats">
-  <div class="stats-grid">
+  {% if sheet.spellcasting %}
+  <section class="pane" data-modes="combat rp all" data-tab="spells" data-combat-order="2" data-rp-order="4">
     <section class="win">
-      <div class="win-title">Abilities</div>
-      <div class="win-body">
-        <div class="abilities ro">
-          {% for ab in ABILITIES %}
-          <div class="ability"><span class="ability-name">{{ ab|upper }}</span><span class="mod">{{ sheet.mods[ab]|mod }}</span><span class="score">{{ sheet.scores[ab] }}</span></div>
-          {% endfor %}
-        </div>
-      </div>
+      <div class="win-title">Spells <span class="muted small">Cast spends the slot</span></div>
+      <div class="win-body">{% include "partials/spells_play.html" %}</div>
     </section>
+  </section>
+  {% endif %}
+
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="3">
+    {% include "partials/counters.html" %}
+  </section>
+
+  <section class="pane" data-modes="combat" data-combat-order="4">
     <section class="win">
       <div class="win-title">Saving throws</div>
-      <div class="win-body rows">
+      <div class="win-body rows two">
         {% for s in sheet.saves %}
         <div class="row ro"><span class="dot {% if s.prof %}on{% endif %}"></span><span class="row-name">{{ s.name }}</span><span class="row-val">{{ s.total|mod }}</span></div>
         {% endfor %}
       </div>
     </section>
-    <section class="win skills-win">
-      <div class="win-title">Skills</div>
+  </section>
+
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="5">
+    <section class="win">
+      <div class="win-title">Rest &amp; recovery</div>
+      <div class="win-body hp-foot">
+        {% if sheet.hit_die %}
+        <form class="inline" hx-post="/c/{{ ch.id }}/hp" hx-target="#hud" hx-swap="outerHTML">
+          <input type="hidden" name="action" value="hit_die"><input type="hidden" name="view" value="play">
+          <span class="k">Hit dice</span>
+          <button name="delta" value="1" class="ghost">spend d{{ sheet.hit_die }} ({{ sheet.hit_dice_left }}/{{ ch.level }} left)</button>
+          <button name="delta" value="-1" class="link">undo</button>
+        </form>
+        {% endif %}
+        <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none">
+          <input type="hidden" name="kind" value="short">
+          <button class="ghost">Short rest</button>
+        </form>
+        <form class="inline" hx-post="/c/{{ ch.id }}/rest" hx-swap="none" hx-confirm="Long rest: full HP, all slots and resources back, half your hit dice back?">
+          <input type="hidden" name="kind" value="long">
+          <button class="ghost">Long rest</button>
+        </form>
+      </div>
+    </section>
+  </section>
+
+  <section class="pane" data-modes="rp all" data-tab="stats" data-rp-order="1">
+    <section class="win">
+      <div class="win-title">Skills <span class="muted small">passive perception {{ sheet.passive_perception }}</span></div>
       <div class="win-body rows two">
         {% for s in sheet.skills %}
         <div class="row ro"><span class="dot {% if s.expertise %}on double{% elif s.prof %}on{% endif %}"></span><span class="row-name">{{ s.name }} <small class="muted">{{ s.ability }}</small></span><span class="row-val">{{ s.total|mod }}</span></div>
         {% endfor %}
       </div>
     </section>
-    {% if ch.other_profs %}
-    <section class="win">
-      <div class="win-title">Proficiencies &amp; languages</div>
-      <div class="win-body prose small">{{ ch.other_profs }}</div>
-    </section>
-    {% endif %}
-  </div>
-</div>
+  </section>
 
-<div class="tab-pane" data-pane="features">
-  {% include "partials/features.html" %}
-</div>
+  <section class="pane" data-modes="all" data-tab="stats">
+    <div class="two-col">
+      <section class="win">
+        <div class="win-title">Abilities</div>
+        <div class="win-body">
+          <div class="abilities ro">
+            {% for ab in ABILITIES %}
+            <div class="ability"><span class="ability-name">{{ ab|upper }}</span><span class="mod">{{ sheet.mods[ab]|mod }}</span><span class="score">{{ sheet.scores[ab] }}</span></div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+      <div>
+        <section class="win">
+          <div class="win-title">Saving throws</div>
+          <div class="win-body rows">
+            {% for s in sheet.saves %}
+            <div class="row ro"><span class="dot {% if s.prof %}on{% endif %}"></span><span class="row-name">{{ s.name }}</span><span class="row-val">{{ s.total|mod }}</span></div>
+            {% endfor %}
+          </div>
+        </section>
+        {% if ch.other_profs %}
+        <section class="win">
+          <div class="win-title">Proficiencies &amp; languages</div>
+          <div class="win-body prose small">{{ ch.other_profs }}</div>
+        </section>
+        {% endif %}
+      </div>
+    </div>
+  </section>
 
-<div class="tab-pane" data-pane="gear">
-  {% include "partials/inventory.html" %}
-</div>
-
-<div class="tab-pane" data-pane="notes">
-  <div class="two-col">
+  <section class="pane" data-modes="rp all" data-tab="notes" data-rp-order="2">
     <section class="win">
       <div class="win-title">Session notes</div>
       <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
-        <textarea name="notes" rows="14" placeholder="What happened, who you met, what you owe">{{ ch.notes }}</textarea>
+        <textarea name="notes" rows="10" placeholder="What happened, who you met, what you owe">{{ ch.notes }}</textarea>
       </form>
     </section>
+  </section>
+
+  <section class="pane" data-modes="rp all" data-tab="gear" data-rp-order="3">
+    {% include "partials/inventory.html" %}
+  </section>
+
+  <section class="pane" data-modes="rp all" data-tab="features" data-rp-order="5">
+    {% include "partials/features.html" %}
+  </section>
+
+  <section class="pane" data-modes="rp all" data-tab="notes" data-rp-order="6">
     <section class="win">
       <div class="win-title">About {{ ch.name }}</div>
       <div class="win-body">
         {% if ch.appearance %}<p class="small">{{ ch.appearance }}</p>{% endif %}
+        {% if ch.other_profs %}<p class="small muted">{{ ch.other_profs|truncate(160) }}</p>{% endif %}
         {% if ch.personality %}<details class="feat"><summary>Personality</summary><div class="feat-body prose">{{ ch.personality }}</div></details>{% endif %}
         {% if ch.backstory %}<details class="feat"><summary>Backstory</summary><div class="feat-body prose">{{ ch.backstory }}</div></details>{% endif %}
         {% if ch.allies %}<details class="feat"><summary>Allies &amp; organisations</summary><div class="feat-body prose">{{ ch.allies }}</div></details>{% endif %}
+        {% if ch.features_custom %}<details class="feat"><summary>Player notes on abilities</summary><div class="feat-body prose">{{ ch.features_custom }}</div></details>{% endif %}
         {% if not (ch.appearance or ch.personality or ch.backstory or ch.allies) %}<p class="muted small">Nothing written yet - fill it in on the sheet.</p>{% endif %}
       </div>
     </section>
-  </div>
-</div>
+  </section>
 
+</div>
 </div>
 <script>
   (function () {
-    var root = document.getElementById("sheet"), key = "am-tab-" + root.dataset.cid;
-    function show(name) {
-      var found = false;
-      root.querySelectorAll(".tab-pane").forEach(function (p) { var on = p.dataset.pane === name; p.classList.toggle("on", on); found = found || on; });
-      if (!found) { return show("actions"); }
-      root.querySelectorAll("#tabs [data-tab]").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === name); });
-      try { localStorage.setItem(key, name); } catch (e) {}
+    var root = document.getElementById("sheet"), cid = root.dataset.cid;
+    var panes = document.getElementById("panes"), modeKey = "am-mode-" + cid, tabKey = "am-tab-" + cid;
+    var mode = "combat", tab = "actions";
+    function remember(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function apply() {
+      panes.className = "panes mode-" + mode;
+      document.getElementById("tabs").classList.toggle("on", mode === "all");
+      root.querySelectorAll("#modes [data-mode]").forEach(function (b) { b.classList.toggle("on", b.dataset.mode === mode); });
+      var tabFound = false;
+      root.querySelectorAll("#tabs [data-tab]").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === tab); tabFound = tabFound || b.dataset.tab === tab; });
+      if (mode === "all" && !tabFound) { tab = "actions"; return apply(); }
+      panes.querySelectorAll(".pane").forEach(function (p) {
+        var modes = (p.dataset.modes || "").split(" ");
+        var on = mode === "all" ? (modes.indexOf("all") >= 0 && p.dataset.tab === tab) : modes.indexOf(mode) >= 0;
+        p.classList.toggle("on", on);
+        p.style.order = p.dataset[mode + "Order"] || 50;
+      });
     }
-    root.querySelectorAll("#tabs [data-tab]").forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.tab); }); });
-    var saved = null;
-    try { saved = localStorage.getItem(key); } catch (e) {}
-    if (saved) { show(saved); }
+    root.querySelectorAll("#modes [data-mode]").forEach(function (b) { b.addEventListener("click", function () { mode = b.dataset.mode; remember(modeKey, mode); apply(); }); });
+    root.querySelectorAll("#tabs [data-tab]").forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.tab; remember(tabKey, tab); apply(); }); });
+    try { mode = localStorage.getItem(modeKey) || mode; tab = localStorage.getItem(tabKey) || tab; } catch (e) {}
+    if (["combat", "rp", "all"].indexOf(mode) < 0) { mode = "combat"; }
+    apply();
   })();
 </script>
 {% endblock %}

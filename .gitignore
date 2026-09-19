@@ -7,3 +7,4 @@ data/*.db*
 settings.json
 .claude/
 data/secret.key
+data/portraits/
