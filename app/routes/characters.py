@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
@@ -80,6 +81,12 @@ def _partial(request: Request, name: str, ch: Character, **extra):
     return page(request, name, sheet=sheet, **extra)
 
 
+def _view(form) -> dict:
+    """Blocks the play view swaps back in must stay read-only."""
+    play = str(form.get("view", "")) == "play"
+    return {"readonly": play, "view": "play" if play else "sheet"}
+
+
 def _grouped_race_options(comp):
     groups: dict[str, list] = {}
     for opt in comp.race_options():
@@ -145,8 +152,8 @@ async def create(request: Request):
         session.commit()
         cid = ch.id
     if request.state.role == "dm":
-        return RedirectResponse(f"/c/{cid}", status_code=303)
-    return RedirectResponse(f"/c/{cid}/unlock", status_code=303)
+        return RedirectResponse(f"/c/{cid}/sheet", status_code=303)
+    return RedirectResponse(f"/c/{cid}/unlock?next=/c/{cid}/sheet", status_code=303)
 
 
 def fmt_key(entity: dict) -> str:
@@ -154,29 +161,36 @@ def fmt_key(entity: dict) -> str:
 
 
 # ----------------------------------------------------------------- claiming a character
+def _safe_next(value: str, cid: int) -> str:
+    return value if value.startswith(f"/c/{cid}") else f"/c/{cid}"
+
+
 @router.get("/c/{cid}/unlock")
-async def unlock_form(request: Request, cid: int):
+async def unlock_form(request: Request, cid: int, next: str = ""):
     with _db(request) as session:
         ch = _fetch(session, cid)
         if request.state.role == "dm" or cid in request.state.unlocked:
-            return RedirectResponse(f"/c/{cid}", status_code=303)
-        return page(request, "unlock.html", ch=ch, mode="enter" if ch.password_hash else "set", error=None)
+            return RedirectResponse(_safe_next(next, cid), status_code=303)
+        return page(request, "unlock.html", ch=ch, mode="enter" if ch.password_hash else "set", error=None, next=next)
 
 
 @router.post("/c/{cid}/unlock")
 async def unlock(request: Request, cid: int):
     form = await request.form()
     password = str(form.get("password", ""))
+    target = _safe_next(str(form.get("next", "")), cid)
     with _db(request) as session:
         ch = _fetch(session, cid)
         if not ch.password_hash:
             if not password:
-                return page(request, "unlock.html", ch=ch, mode="set", error="Type something - anything - to use as the password.")
+                return page(request, "unlock.html", ch=ch, mode="set", next=target,
+                            error="Type something - anything - to use as the password.")
             ch.password_hash = auth.hash_password(password)
             session.commit()
         elif not auth.verify_password(password, ch.password_hash):
-            return page(request, "unlock.html", ch=ch, mode="enter", error="That's not it. Ask the DM to reset it if it's forgotten.")
-    return _set_unlock_cookie(request, RedirectResponse(f"/c/{cid}", status_code=303), cid)
+            return page(request, "unlock.html", ch=ch, mode="enter", next=target,
+                        error="That's not it. Ask the DM to reset it if it's forgotten.")
+    return _set_unlock_cookie(request, RedirectResponse(target, status_code=303), cid)
 
 
 @router.post("/c/{cid}/password/reset")
@@ -189,8 +203,16 @@ async def password_reset(request: Request, cid: int):
     return _toast(Response(status_code=204), "Password cleared - the next person to open the sheet sets a new one")
 
 
-# ----------------------------------------------------------------- sheet
+# ----------------------------------------------------------------- play view + sheet editor
 @router.get("/c/{cid}")
+async def play(request: Request, cid: int):
+    """The table view: read-only, except what changes mid-session."""
+    with _db(request) as session:
+        ch = _load(request, session, cid)
+        return page(request, "play.html", sheet=build_sheet(ch, _comp(request)), readonly=True, view="play")
+
+
+@router.get("/c/{cid}/sheet")
 async def sheet(request: Request, cid: int):
     with _db(request) as session:
         ch = _load(request, session, cid)
@@ -369,7 +391,7 @@ async def spells(request: Request, cid: int):
                     s["prepared"] = not s.get("prepared")
         ch.spells = current
         session.commit()
-        return _partial(request, "partials/spells_oob.html", ch)
+        return _partial(request, "partials/spells_oob.html", ch, **_view(form))
 
 
 # ----------------------------------------------------------------- attacks / inventory / conditions
@@ -415,11 +437,28 @@ async def attacks(request: Request, cid: int):
 @router.post("/c/{cid}/inventory")
 async def inventory(request: Request, cid: int):
     form = await request.form()
+    op = str(form.get("op", ""))
+    idx = _clamp(form.get("idx"), -1, 999, -1)
     with _db(request) as session:
         ch = _load(request, session, cid)
-        ch.inventory = _rows_update([dict(r) for r in (ch.inventory or [])], form, ("name", "qty", "notes"))
+        rows = [dict(r) for r in (ch.inventory or [])]
+        removed = [dict(r) for r in (ch.inventory_removed or [])]
+        if op == "remove" and 0 <= idx < len(rows):
+            gone = rows.pop(idx)
+            gone["when"] = datetime.now().strftime("%d %b %H:%M")
+            removed.insert(0, gone)
+            del removed[40:]
+        elif op == "restore" and 0 <= idx < len(removed):
+            back = removed.pop(idx)
+            back.pop("when", None)
+            rows.append(back)
+        elif op == "forget" and 0 <= idx < len(removed):
+            removed.pop(idx)
+        else:
+            rows = _rows_update(rows, form, ("name", "qty", "notes"))
+        ch.inventory, ch.inventory_removed = rows, removed
         session.commit()
-        if str(form.get("op")) == "update":
+        if op == "update":
             return _toast(Response(status_code=204))
         return _partial(request, "partials/inventory.html", ch)
 
@@ -529,4 +568,4 @@ async def counters(request: Request, cid: int):
                 row["used"] = max(0, int(row.get("used", 0) or 0) - 1)
         ch.counters = rows
         session.commit()
-        return _partial(request, "partials/counters.html", ch)
+        return _partial(request, "partials/counters.html", ch, **_view(form))

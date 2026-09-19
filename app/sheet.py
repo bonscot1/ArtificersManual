@@ -67,12 +67,14 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
             (race_fluff if e["name"] in _RACE_FLUFF else race_traits).append(e)
 
     spellcasting = _spellcasting(ch, cls, sub, mods, prof)
-    spell_rows = []
+    always = always_prepared(sub, ch.level, c)
+    spell_rows = [{"key": k, "spell": c.spells[k], "prepared": True, "always": True, "level": c.spells[k]["level"]}
+                  for k in always]
     for entry in ch.spells or []:
         sp = c.spells.get(entry.get("key", ""))
-        if sp:
+        if sp and entry.get("key") not in always:
             spell_rows.append({"key": entry["key"], "spell": sp, "prepared": bool(entry.get("prepared")),
-                               "level": sp["level"]})
+                               "always": False, "level": sp["level"]})
     spell_rows.sort(key=lambda r: (r["level"], r["spell"]["name"]))
     spell_levels: dict[int, list] = {}
     for r in spell_rows:
@@ -130,7 +132,8 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
         "spellcasting": spellcasting,
         "spell_levels": spell_levels,
         "spell_count": len(spell_rows),
-        "prepared_count": sum(1 for r in spell_rows if r["prepared"] and r["level"] > 0),
+        "prepared_count": sum(1 for r in spell_rows if r["prepared"] and r["level"] > 0 and not r["always"]),
+        "racial_spells": racial_spells(race, ch.level, c) if race else [],
         "conditions": list(ch.conditions or []),
         "condition_names": [x["name"] for x in sorted(c.conditions.values(), key=lambda x: x["name"])],
         "currency": {k: int((ch.currency or {}).get(k, 0) or 0) for k in ("cp", "sp", "ep", "gp", "pp")},
@@ -244,3 +247,65 @@ def _item_name(text: str) -> str:
     name = re.sub(r"\(.*?\)", "", text)
     name = re.sub(r"^\d+\s*[x×]\s*", "", name, flags=re.I).strip()
     return name.replace("Dwarven Kind", "Dwarvenkind").replace("Hand Axe", "Handaxe")
+
+
+def _spell_key(text: str, c: Compendium) -> str | None:
+    """'bless', 'thaumaturgy#c', 'hellish rebuke#2', 'shield|phb' -> the compendium key."""
+    name = text.split("#")[0]
+    source = None
+    if "|" in name:
+        name, source = name.split("|", 1)
+    sp = c.find("spell", name, source)
+    return f"{sp['name']}|{sp['source']}" if sp else None
+
+
+def always_prepared(sub: dict | None, level: int, c: Compendium) -> list[str]:
+    """Domain / oath / circle spells: always prepared, never counted. Named variants need a pick."""
+    out: list[str] = []
+    for block in (sub or {}).get("additionalSpells", []) or []:
+        if block.get("name"):
+            continue
+        for lvl, names in (block.get("prepared") or {}).items():
+            if not str(lvl).isdigit() or int(lvl) > level:
+                continue
+            for n in names:
+                key = _spell_key(n, c) if isinstance(n, str) else None
+                if key and key not in out:
+                    out.append(key)
+    return out
+
+
+def racial_spells(race: dict, level: int, c: Compendium) -> list[str]:
+    """One line per racial spell: 'Thaumaturgy (cantrip)', 'Hellish Rebuke at 2nd level, 1/day (from level 3)'."""
+    out = []
+    for block in race.get("additionalSpells", []) or []:
+        ability = block.get("ability")
+        ability = ability.upper() if isinstance(ability, str) else ""
+        for lvl, names in (block.get("known") or {}).items():
+            names = names.get("_", []) if isinstance(names, dict) else names
+            for n in names:
+                key = _spell_key(n, c) if isinstance(n, str) else None
+                if key:
+                    out.append(f"{key.split('|')[0]} (cantrip)" if c.spells[key]["level"] == 0 else key.split("|")[0])
+        for lvl, block2 in (block.get("innate") or {}).items():
+            if not isinstance(block2, dict):
+                continue
+            for cadence, spells in block2.items():
+                if cadence not in ("daily", "rest"):
+                    continue
+                for uses, names in spells.items():
+                    for n in names:
+                        key = _spell_key(n, c) if isinstance(n, str) else None
+                        if not key:
+                            continue
+                        cast_at = n.split("#")[1] if "#" in n and n.split("#")[1].isdigit() else ""
+                        line = key.split("|")[0]
+                        if cast_at:
+                            line += f" at {rules.ordinal(int(cast_at))} level"
+                        line += f", {uses.rstrip('e')}/{'day' if cadence == 'daily' else 'rest'}"
+                        if str(lvl).isdigit() and int(lvl) > 1:
+                            line += f" (from level {lvl})"
+                        if ability:
+                            line += f" - {ability}"
+                        out.append(line)
+    return out

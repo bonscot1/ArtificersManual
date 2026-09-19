@@ -16,13 +16,15 @@ def test_first_opener_sets_the_password_then_stays_in(tmp_path):
     p = _player(app)
     r = p.post("/new", data=WIZARD, follow_redirects=False)
     cid = int(r.headers["location"].split("/")[2])
-    assert r.headers["location"] == f"/c/{cid}/unlock"
+    assert r.headers["location"] == f"/c/{cid}/unlock?next=/c/{cid}/sheet"
     r = p.get(f"/c/{cid}", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/c/{cid}/unlock"
     assert "Nobody has claimed this sheet yet" in p.get(f"/c/{cid}/unlock").text
     assert "Type something" in p.post(f"/c/{cid}/unlock", data={"password": ""}).text
-    r = p.post(f"/c/{cid}/unlock", data={"password": "owlbear"}, follow_redirects=False)
-    assert r.status_code == 303 and "am_chars" in r.cookies
+    r = p.post(f"/c/{cid}/unlock", data={"password": "owlbear", "next": f"/c/{cid}/sheet"}, follow_redirects=False)
+    assert r.status_code == 303 and "am_chars" in r.cookies and r.headers["location"] == f"/c/{cid}/sheet"
+    r = p.get(f"/c/{cid}/unlock?next=https://evil.example/", follow_redirects=False)
+    assert r.headers["location"] == f"/c/{cid}"          # off-site `next` is ignored
     assert p.get(f"/c/{cid}").status_code == 200
     assert p.post(f"/c/{cid}/save", data={"notes": "hi"}).status_code == 200
     assert p.get(f"/c/{cid}/unlock", follow_redirects=False).headers["location"] == f"/c/{cid}"   # nothing to do
@@ -71,7 +73,7 @@ def test_dm_opens_everything_and_can_reset(tmp_path):
     assert "The DM password" in dm.get("/login").text
     dm.post("/login", data={"password": "dm"})
     assert dm.get(f"/c/{cid}").status_code == 200
-    assert "Reset password" in dm.get(f"/c/{cid}").text
+    assert "Reset password" in dm.get(f"/c/{cid}/sheet").text
     assert _player(app).post(f"/c/{cid}/password/reset").status_code in (401, 403)
     assert dm.post(f"/c/{cid}/password/reset").status_code == 204
     newcomer = _player(app)

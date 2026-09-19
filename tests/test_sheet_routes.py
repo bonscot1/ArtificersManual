@@ -8,7 +8,7 @@ from tests.conftest import create_character, make_settings
 
 def test_create_fills_in_the_books(client):
     cid = create_character(client)
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     for needle in ("Elf (High)", "Fey Ancestry", "Trance", "Arcane Recovery", "Sage", "Researcher",
                    "Save DC", 'value="Test Wizard"'):
         assert needle in html, needle
@@ -31,12 +31,12 @@ def test_checkbox_groups_only_touched_when_declared(client):
     cid = create_character(client)
     client.post(f"/c/{cid}/save", data={"_lists": "skill_prof,skill_expertise", "skill_prof": ["Arcana", "History"],
                                         "skill_expertise": ["Arcana"]})
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     assert 'value="Arcana" checked title="proficient"' in html
     assert 'value="Arcana" checked title="expertise"' in html
     # a save from another form (no _lists) must not wipe the skills
     client.post(f"/c/{cid}/save", data={"notes": "hello"})
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     assert 'value="Arcana" checked title="proficient"' in html and ">hello</textarea>" in html
 
 
@@ -44,14 +44,14 @@ def test_level_and_subclass_refresh(client):
     cid = create_character(client)
     r = client.post(f"/c/{cid}/save", data={"level": "5"})
     assert r.status_code == 204 and r.headers["HX-Refresh"] == "true"
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     assert "Arcane Tradition" in html and 'name="subclass_key"' in html
     client.post(f"/c/{cid}/save", data={"subclass_key": "Evocation|PHB"})
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     assert "Sculpt Spells" in html and "Evocation Savant" in html
     # bogus subclass for this class is ignored
     client.post(f"/c/{cid}/save", data={"subclass_key": "Champion|PHB"})
-    assert "Sculpt Spells" in client.get(f"/c/{cid}").text
+    assert "Sculpt Spells" in client.get(f"/c/{cid}/sheet").text
 
 
 def test_spells_and_slots(client):
@@ -63,7 +63,7 @@ def test_spells_and_slots(client):
     r = client.post(f"/c/{cid}/spells", data={"op": "add", "key": "Fireball|PHB"})
     assert "Fireball" in r.text and 'title="prepared"' in r.text
     client.post(f"/c/{cid}/spells", data={"op": "add", "key": "Fireball|PHB"})   # no duplicates
-    assert client.get(f"/c/{cid}").text.count("spell-name\">Fireball") == 1
+    assert client.get(f"/c/{cid}/sheet").text.count("spell-name\">Fireball") == 1
     r = client.post(f"/c/{cid}/spells", data={"op": "prepare", "key": "Fireball|PHB"})
     assert 'checked title="prepared"' in r.text
     r = client.post(f"/c/{cid}/slot", data={"level": "2", "used": "2"})
@@ -85,7 +85,7 @@ def test_hp_flow(client):
     client.post(f"/c/{cid}/slot", data={"level": "1", "used": "2"})
     r = client.post(f"/c/{cid}/rest", data={"kind": "long"})
     assert r.headers["HX-Refresh"] == "true"
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     assert '<span class="hp-big">17</span>' in html and "pip used" not in html
 
 
@@ -97,7 +97,7 @@ def test_attacks_prefill_from_book_weapon(client):
     r = client.post(f"/c/{cid}/attacks", data={"op": "update", "idx": "0", "name": "Dagger", "bonus": "+9",
                                                  "damage": "1d4", "notes": ""})
     assert r.status_code == 204 and "toast" in r.headers["HX-Trigger"]
-    assert 'value="+9"' in client.get(f"/c/{cid}").text
+    assert 'value="+9"' in client.get(f"/c/{cid}/sheet").text
     r = client.post(f"/c/{cid}/attacks", data={"op": "remove", "idx": "0"})
     assert "Dagger" not in r.text
 
@@ -117,18 +117,18 @@ def test_dm_notes_and_delete_are_dm_only(tmp_path):
     dm.post("/login", data={"password": "dm"})
     cid = create_character(dm)
     dm.post(f"/c/{cid}/save", data={"notes_dm": "the twist"})
-    assert "the twist" in dm.get(f"/c/{cid}").text
+    assert "the twist" in dm.get(f"/c/{cid}/sheet").text
 
     player = TestClient(dm.app)
     player.post("/login", data={"password": "tbl"})
     player.post(f"/c/{cid}/unlock", data={"password": "mine"})        # claims the sheet
-    html = player.get(f"/c/{cid}").text
+    html = player.get(f"/c/{cid}/sheet").text
     assert "the twist" not in html and "DM notes" not in html
     assert player.post(f"/c/{cid}/save", data={"notes_dm": "hax"}).status_code == 403
     assert player.post(f"/c/{cid}/delete").status_code == 403
-    assert "the twist" in dm.get(f"/c/{cid}").text
+    assert "the twist" in dm.get(f"/c/{cid}/sheet").text
     assert dm.post(f"/c/{cid}/delete", follow_redirects=False).status_code == 303
-    assert dm.get(f"/c/{cid}").status_code == 404
+    assert dm.get(f"/c/{cid}/sheet").status_code == 404
 
 
 def test_compendium_pages(client):
@@ -153,6 +153,6 @@ def test_no_raw_markup_on_sheet(client):
     cid = create_character(client, class_key="Cleric|PHB", race="Dwarf|PHB||Hill|PHB", background_key="Acolyte|PHB")
     client.post(f"/c/{cid}/save", data={"subclass_key": "Life|PHB"})
     client.post(f"/c/{cid}/spells", data={"op": "add", "key": "Cure Wounds|PHB"})
-    html = client.get(f"/c/{cid}").text
+    html = client.get(f"/c/{cid}/sheet").text
     assert "{@" not in html
     assert "Dwarven Resilience" in html and "Disciple of Life" in html and "Shelter of the Faithful" in html

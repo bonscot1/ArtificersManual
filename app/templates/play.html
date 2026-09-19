@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% set ch = sheet.char %}
+{% block title %}{{ ch.name }} - Artificer's Manual{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+<div class="sheet play" id="sheet">
+
+<div class="play-head">
+  <div>
+    <h1>{{ ch.name }}</h1>
+    <div class="muted">
+      {{ sheet.race.name if sheet.race else 'No race' }} &middot;
+      {{ sheet.cls.name if sheet.cls else 'No class' }}{% if sheet.sub %} ({{ sheet.sub.name }}){% endif %} {{ ch.level }}
+      {% if sheet.bg %} &middot; {{ sheet.bg.name }}{% endif %}
+      {% if ch.player %} &middot; {{ ch.player }}{% endif %}
+      {% if ch.alignment %} &middot; {{ ch.alignment }}{% endif %}
+    </div>
+  </div>
+  <a class="btn ghost-btn" href="/c/{{ ch.id }}/sheet">Edit sheet</a>
+</div>
+
+<div class="strip play-strip">
+  <div><span class="k">AC</span><span class="v">{{ ch.ac }}</span></div>
+  <div><span class="k">Initiative</span><span class="v">{{ sheet.initiative|mod }}</span></div>
+  <div><span class="k">Speed</span><span class="v">{{ ch.speed }}</span></div>
+  <div><span class="k">Proficiency</span><span class="v">+{{ sheet.prof }}</span></div>
+  <div><span class="k">Passive Perc.</span><span class="v">{{ sheet.passive_perception }}</span></div>
+  {% if sheet.spellcasting and sheet.spellcasting.dc %}
+  <div><span class="k">Spell DC</span><span class="v">{{ sheet.spellcasting.dc }}</span></div>
+  <div><span class="k">Spell attack</span><span class="v">{{ sheet.spellcasting.attack|mod }}</span></div>
+  {% endif %}
+  {% if ch.inspiration %}<div><span class="k">Inspiration</span><span class="v">yes</span></div>{% endif %}
+</div>
+
+<div class="sheet-grid">
+  <div class="col">
+    <section class="win">
+      <div class="win-title">Abilities</div>
+      <div class="win-body">
+        <div class="abilities ro">
+          {% for ab in ABILITIES %}
+          <div class="ability">
+            <span class="ability-name">{{ ab|upper }}</span>
+            <span class="mod">{{ sheet.mods[ab]|mod }}</span>
+            <span class="score">{{ sheet.scores[ab] }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="win">
+      <div class="win-title">Saving throws</div>
+      <div class="win-body rows">
+        {% for s in sheet.saves %}
+        <div class="row ro"><span class="dot {% if s.prof %}on{% endif %}"></span><span class="row-name">{{ s.name }}</span><span class="row-val">{{ s.total|mod }}</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="win">
+      <div class="win-title">Skills</div>
+      <div class="win-body rows">
+        {% for s in sheet.skills %}
+        <div class="row ro"><span class="dot {% if s.expertise %}on double{% elif s.prof %}on{% endif %}"></span><span class="row-name">{{ s.name }} <small class="muted">{{ s.ability }}</small></span><span class="row-val">{{ s.total|mod }}</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if ch.other_profs %}
+    <section class="win">
+      <div class="win-title">Proficiencies &amp; languages</div>
+      <div class="win-body prose small">{{ ch.other_profs }}</div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col">
+    <section class="win">
+      <div class="win-title">Hit points</div>
+      {% include "partials/hp.html" %}
+    </section>
+
+    {% include "partials/conditions.html" %}
+    {% include "partials/counters.html" %}
+    {% include "partials/attacks.html" %}
+
+    {% if sheet.spellcasting %}
+    <section class="win">
+      <div class="win-title">Spellcasting</div>
+      <div class="win-body">
+        {% include "partials/spellcasting.html" %}
+        {% include "partials/spells.html" %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col">
+    <section class="win">
+      <div class="win-title">Session notes</div>
+      <form class="win-body" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
+        <textarea name="notes" rows="7" placeholder="What happened, who you met, what you owe">{{ ch.notes }}</textarea>
+      </form>
+    </section>
+
+    {% include "partials/inventory.html" %}
+    {% include "partials/features.html" %}
+
+    {% if ch.features_custom or ch.personality or ch.backstory or ch.allies or ch.appearance %}
+    <section class="win">
+      <div class="win-title">About</div>
+      <div class="win-body">
+        {% if ch.appearance %}<p class="small">{{ ch.appearance }}</p>{% endif %}
+        {% if ch.features_custom %}<details class="feat"><summary>Other features &amp; notes</summary><div class="feat-body prose">{{ ch.features_custom }}</div></details>{% endif %}
+        {% if ch.personality %}<details class="feat"><summary>Personality</summary><div class="feat-body prose">{{ ch.personality }}</div></details>{% endif %}
+        {% if ch.backstory %}<details class="feat"><summary>Backstory</summary><div class="feat-body prose">{{ ch.backstory }}</div></details>{% endif %}
+        {% if ch.allies %}<details class="feat"><summary>Allies &amp; organisations</summary><div class="feat-body prose">{{ ch.allies }}</div></details>{% endif %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+</div>
+{% endblock %}

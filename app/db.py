@@ -61,6 +61,7 @@ class Character(Base):
     spells: Mapped[list] = mapped_column(JSON, default=list)           # [{"key": "Fireball|PHB", "prepared": true}]
     attacks: Mapped[list] = mapped_column(JSON, default=list)          # [{"name","bonus","damage","notes"}]
     inventory: Mapped[list] = mapped_column(JSON, default=list)        # [{"name","qty","notes"}]
+    inventory_removed: Mapped[list] = mapped_column(JSON, default=list)  # same rows + "when": easy to put back
     currency: Mapped[dict] = mapped_column(JSON, default=dict)         # {"cp":0,"sp":0,"ep":0,"gp":0,"pp":0}
 
     feats: Mapped[list] = mapped_column(JSON, default=list)            # [{"key": "Alert|PHB", "note": ""}]

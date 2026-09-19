@@ -6,7 +6,7 @@
 <div class="sheet" id="sheet">
 
 <form class="identity win" hx-post="/c/{{ ch.id }}/save" hx-trigger="change" hx-swap="none">
-  <div class="win-title">Character</div>
+  <div class="win-title">Character sheet <a class="small" href="/c/{{ ch.id }}">back to the play view</a></div>
   <div class="win-body identity-grid">
     <label class="name">Name <input name="name" value="{{ ch.name }}" maxlength="120"></label>
     <label>Player <input name="player" value="{{ ch.player }}" maxlength="120"></label>

@@ -242,3 +242,21 @@ a.pill:hover { text-decoration: none; border-color: var(--gold); }
 .rules table { border-collapse: collapse; margin: .5rem 0; }
 .rules th, .rules td { border: 1px solid var(--line); padding: .2rem .6rem; text-align: left; }
 .rules code { background: var(--bg-3); padding: 0 .3rem; border-radius: 3px; }
+
+/* ---- play view */
+.play-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.ghost-btn { background: transparent; color: var(--gold); border: 1px solid var(--line); }
+.ghost-btn:hover { border-color: var(--gold); text-decoration: none; }
+.play-strip > div { background: var(--bg-2); }
+.abilities.ro .score { font-size: .8rem; color: var(--ink-2); }
+.row.ro { grid-template-columns: 1rem 1fr auto; }
+.dot { width: .55rem; height: .55rem; border-radius: 50%; border: 1px solid var(--muted); display: inline-block; }
+.dot.on { background: var(--gold); border-color: var(--gold); }
+.dot.double { box-shadow: 0 0 0 2px var(--bg-2), 0 0 0 3px var(--gold); }
+.prose { white-space: pre-line; line-height: 1.45; }
+table.list.compact-left td, table.list.compact-left th { padding: .2rem .5rem; }
+details.removed { margin-top: .5rem; }
+details.removed > summary { cursor: pointer; color: var(--ink-2); font-size: .85rem; }
+.trow.inv.gone { grid-template-columns: .6fr 2fr 2fr auto auto; color: var(--ink-2); font-size: .9rem; }
+.trow.inv.gone .link.muted { color: var(--muted); }
+.chip.always { border-color: var(--gold); color: var(--gold); font-size: .7rem; padding: 0 .4rem; }

@@ -2,6 +2,14 @@
 <section class="win" id="attacks">
   <div class="win-title">Attacks</div>
   <div class="win-body">
+    {% if readonly %}
+    {% if ch.attacks %}
+    <table class="list compact-left">
+      <thead><tr><th>Name</th><th>Hit</th><th>Damage</th><th>Notes</th></tr></thead>
+      <tbody>{% for a in ch.attacks %}<tr><td>{{ a.name }}</td><td>{{ a.bonus }}</td><td>{{ a.damage }}</td><td class="muted">{{ a.notes }}</td></tr>{% endfor %}</tbody>
+    </table>
+    {% else %}<p class="muted small">No attacks on the sheet yet.</p>{% endif %}
+    {% else %}
     <div class="table-rows">
       {% if ch.attacks %}<div class="trow head"><span>Name</span><span>Hit</span><span>Damage</span><span>Notes</span><span></span></div>{% endif %}
       {% for a in ch.attacks %}
@@ -23,5 +31,6 @@
         <button>Add</button>
       </form>
     </div>
+    {% endif %}
   </div>
 </section>

@@ -8,6 +8,7 @@
       {% for t in sheet.race_traits %}
       <details class="feat"><summary>{{ t.name }}</summary><div class="feat-body">{{ t.entries|entries }}</div></details>
       {% endfor %}
+      {% if sheet.racial_spells %}<p class="small"><span class="muted">Spells:</span> {{ sheet.racial_spells|join('; ') }}</p>{% endif %}
       {% if sheet.race_fluff %}
       <details class="feat muted"><summary>Age, size, languages</summary><div class="feat-body">{% for t in sheet.race_fluff %}{{ t|entries }}{% endfor %}</div></details>
       {% endif %}
@@ -37,38 +38,39 @@
       {% for row in sheet.options %}
       <details class="feat pick">
         <summary>{{ row.name }}{% if row.note %} <span class="pick-note">({{ row.note }})</span>{% endif %} <span class="muted small">{{ row.type }}</span>
-          <button type="button" class="link" hx-post="/c/{{ ch.id }}/picks" hx-vals='{"kind": "option", "op": "remove", "idx": {{ row.idx }}}' hx-target="#features" hx-swap="outerHTML" onclick="event.stopPropagation()" title="remove">x</button>
+          {% if not readonly %}<button type="button" class="link" hx-post="/c/{{ ch.id }}/picks" hx-vals='{"kind": "option", "op": "remove", "idx": {{ row.idx }}}' hx-target="#features" hx-swap="outerHTML" onclick="event.stopPropagation()" title="remove">x</button>{% endif %}
         </summary>
         <div class="feat-body">
-          <form class="pick-note-form" hx-post="/c/{{ ch.id }}/picks" hx-trigger="change" hx-swap="none">
+          {% if not readonly %}<form class="pick-note-form" hx-post="/c/{{ ch.id }}/picks" hx-trigger="change" hx-swap="none">
             <input type="hidden" name="kind" value="option"><input type="hidden" name="op" value="note"><input type="hidden" name="idx" value="{{ row.idx }}">
             <input name="note" value="{{ row.note }}" placeholder="Note, e.g. which item this infusion replicates" maxlength="200">
-          </form>
+          </form>{% endif %}
           {% if row.entity %}{{ row.entity.entries|entries }}{% else %}<p class="muted">Not in your enabled books.</p>{% endif %}
         </div>
       </details>
       {% endfor %}
-      <div class="pick-add">
+      {% if not readonly %}<div class="pick-add">
         <input type="search" placeholder="Add an option - infusion, invocation, fighting style..." autocomplete="off"
                hx-get="/c/{{ ch.id }}/picks/search?kind=option" hx-trigger="input changed delay:200ms, search, focus once" hx-target="#pick-results-option" name="q">
         <div id="pick-results-option"></div>
-      </div>
+      </div>{% endif %}
     </div>
     {% endif %}
     {% endif %}
 
+    {% if not readonly or sheet.feats %}
     <div class="feat-group">
       <div class="feat-group-head">Feats</div>
       {% for row in sheet.feats %}
       <details class="feat pick">
         <summary>{{ row.name }}{% if row.note %} <span class="pick-note">({{ row.note }})</span>{% endif %}{% if row.entity and row.entity.source != 'PHB' %} <span class="muted small">{{ row.entity.source }}</span>{% endif %}
-          <button type="button" class="link" hx-post="/c/{{ ch.id }}/picks" hx-vals='{"kind": "feat", "op": "remove", "idx": {{ row.idx }}}' hx-target="#features" hx-swap="outerHTML" onclick="event.stopPropagation()" title="remove">x</button>
+          {% if not readonly %}<button type="button" class="link" hx-post="/c/{{ ch.id }}/picks" hx-vals='{"kind": "feat", "op": "remove", "idx": {{ row.idx }}}' hx-target="#features" hx-swap="outerHTML" onclick="event.stopPropagation()" title="remove">x</button>{% endif %}
         </summary>
         <div class="feat-body">
-          <form class="pick-note-form" hx-post="/c/{{ ch.id }}/picks" hx-trigger="change" hx-swap="none">
+          {% if not readonly %}<form class="pick-note-form" hx-post="/c/{{ ch.id }}/picks" hx-trigger="change" hx-swap="none">
             <input type="hidden" name="kind" value="feat"><input type="hidden" name="op" value="note"><input type="hidden" name="idx" value="{{ row.idx }}">
             <input name="note" value="{{ row.note }}" placeholder="Note" maxlength="200">
-          </form>
+          </form>{% endif %}
           {% if row.entity %}
             {% if row.entity.prerequisite %}<p class="muted small"><i>Prerequisite: {{ row.entity.prerequisite|prereq }}</i></p>{% endif %}
             {{ row.entity.entries|entries }}
@@ -76,12 +78,13 @@
         </div>
       </details>
       {% endfor %}
-      <div class="pick-add">
+      {% if not readonly %}<div class="pick-add">
         <input type="search" placeholder="Add a feat" autocomplete="off"
                hx-get="/c/{{ ch.id }}/picks/search?kind=feat" hx-trigger="input changed delay:200ms, search, focus once" hx-target="#pick-results-feat" name="q">
         <div id="pick-results-feat"></div>
-      </div>
+      </div>{% endif %}
     </div>
+    {% endif %}
 
     {% if sheet.bg %}
     <div class="feat-group">

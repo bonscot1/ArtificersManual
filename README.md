@@ -22,6 +22,20 @@ Then open http://localhost:8000. The console prints the address for other device
 network (e.g. `http://192.168.0.120:8000`). Windows will ask once whether Python may accept
 connections - allow it on private networks.
 
+## Play view and sheet
+
+Opening a character lands on the **play view**: the sheet as you need it at the table, read-only
+except for what changes mid-session - hit points, death saves, hit dice, rests, conditions,
+resource pips, spell slots and prepared spells, equipment and coins, session notes. Everything
+else (scores, proficiencies, features, spells known, backstory) is edited on the full sheet via
+**Edit sheet**.
+
+Removing an item from the equipment list moves it to a **Removed** list underneath, with
+"put back" - so a potion drunk in error, or a sword the DM hands back, is one click.
+
+`scripts/seed_test_party.py` adds three made-up level-2 characters (rogue, life cleric, fiend
+warlock) for trying things out; `--replace` resets them.
+
 ## Who can open what
 
 Every character has its own password. The first person to open a new sheet is asked to set one

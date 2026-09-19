@@ -9,18 +9,20 @@
       <span class="pips">
         {% if c.max <= 10 %}
         {% for i in range(1, c.max + 1) %}
-        <button class="pip {% if i <= c.used %}used{% endif %}" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "set", "idx": {{ idx }}, "used": {{ i if i > c.used else i - 1 }}}' hx-target="#counters" hx-swap="outerHTML" title="{{ i }}"></button>
+        <button class="pip {% if i <= c.used %}used{% endif %}" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "set", "idx": {{ idx }}, "used": {{ i if i > c.used else i - 1 }}, "view": {{ (view or 'sheet')|tojson }}}' hx-target="#counters" hx-swap="outerHTML" title="{{ i }}"></button>
         {% endfor %}
         {% else %}
-        <button class="ghost small" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "use", "idx": {{ idx }}}' hx-target="#counters" hx-swap="outerHTML">use</button>
+        <button class="ghost small" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "use", "idx": {{ idx }}, "view": {{ (view or 'sheet')|tojson }}}' hx-target="#counters" hx-swap="outerHTML">use</button>
         <b>{{ c.max - c.used }}</b><span class="muted small">/{{ c.max }}</span>
-        <button class="link" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "undo", "idx": {{ idx }}}' hx-target="#counters" hx-swap="outerHTML">undo</button>
+        <button class="link" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "undo", "idx": {{ idx }}, "view": {{ (view or 'sheet')|tojson }}}' hx-target="#counters" hx-swap="outerHTML">undo</button>
         {% endif %}
       </span>
       <span class="muted small">{{ c.max - c.used }} left &middot; {{ c.reset }} rest</span>
-      <button type="button" class="link" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "remove", "idx": {{ idx }}}' hx-target="#counters" hx-swap="outerHTML" title="remove">x</button>
+      {% if not readonly %}<button type="button" class="link" hx-post="/c/{{ ch.id }}/counters" hx-vals='{"op": "remove", "idx": {{ idx }}}' hx-target="#counters" hx-swap="outerHTML" title="remove">x</button>{% endif %}
     </div>
     {% endfor %}
+    {% if readonly and not sheet.counters %}<p class="muted small">Nothing tracked. Add rages, ki, per-rest uses on the sheet.</p>{% endif %}
+    {% if not readonly %}
     <form class="trow counter-add" hx-post="/c/{{ ch.id }}/counters" hx-target="#counters" hx-swap="outerHTML">
       <input type="hidden" name="op" value="add">
       <input name="name" placeholder="Rage, Second Wind, Stone's Endurance..." required>
@@ -28,5 +30,6 @@
       <select name="reset"><option value="long">long rest</option><option value="short">short rest</option></select>
       <button>Add</button>
     </form>
+    {% endif %}
   </div>
 </section>

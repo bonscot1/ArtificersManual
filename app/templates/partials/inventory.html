@@ -24,8 +24,25 @@
         <input name="qty" placeholder="1" class="short">
         <input name="name" placeholder="Item" required>
         <input name="notes" placeholder="notes">
+        <span></span>
         <button>Add</button>
       </form>
     </div>
+    {% if ch.inventory_removed %}
+    <details class="removed">
+      <summary>Removed ({{ ch.inventory_removed|length }}) <span class="muted small">used, lost, handed over - put back with one click</span></summary>
+      <div class="table-rows">
+        {% for it in ch.inventory_removed %}
+        <div class="trow inv gone">
+          <span class="short">{{ it.qty }}</span>
+          <span>{{ it.name }}</span>
+          <span class="muted small">{{ it.notes }}{% if it.when %} &middot; {{ it.when }}{% endif %}</span>
+          <button type="button" class="link" hx-post="/c/{{ ch.id }}/inventory" hx-vals='{"op": "restore", "idx": {{ loop.index0 }}}' hx-target="#inventory" hx-swap="outerHTML">put back</button>
+          <button type="button" class="link muted" hx-post="/c/{{ ch.id }}/inventory" hx-vals='{"op": "forget", "idx": {{ loop.index0 }}}' hx-target="#inventory" hx-swap="outerHTML" title="drop from this list">forget</button>
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   </div>
 </section>

@@ -1,5 +1,7 @@
-import pytest
+import re
 from pathlib import Path
+
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -45,4 +47,4 @@ def create_character(client: TestClient, **overrides) -> int:
     data = {**WIZARD, **overrides}
     r = client.post("/new", data=data, follow_redirects=False)
     assert r.status_code == 303, r.text
-    return int(r.headers["location"].rsplit("/", 1)[-1])
+    return int(re.search(r"/c/(\d+)", r.headers["location"]).group(1))
