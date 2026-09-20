@@ -1,0 +1,25 @@
+<div class="peek-card statblock">
+  <div class="peek-head">
+    <b>{{ m.name }}</b> <span class="muted small">{{ s.size }} {{ s.type }} &middot; CR {{ s.cr }} &middot; {{ m.source }}{% if m.page %} p.{{ m.page }}{% endif %}</span>
+    <button type="button" class="link" onclick="this.closest('.peek-card').remove()" title="close">x</button>
+  </div>
+  <p class="small"><b>AC</b> {{ s.ac_text }} &middot; <b>HP</b> {{ s.hp }}{% if s.hp_formula %} ({{ s.hp_formula }}){% endif %} &middot; <b>Speed</b> {{ s.speed }}</p>
+  <div class="abilities ro compact">
+    {% for ab in ['str', 'dex', 'con', 'int', 'wis', 'cha'] %}
+    <div class="ability"><span class="ability-name">{{ ab|upper }}</span><span class="mod">{{ (((m[ab] or 10) - 10) // 2)|mod }}</span><span class="score">{{ m[ab] }}</span></div>
+    {% endfor %}
+  </div>
+  <p class="small muted">
+    {% if m.save %}<b>Saves</b> {% for k, v in m.save.items() %}{{ k|upper }} {{ v }}{% if not loop.last %}, {% endif %}{% endfor %} &middot; {% endif %}
+    {% if m.skill %}<b>Skills</b> {% for k, v in m.skill.items() %}{{ k|title }} {{ v }}{% if not loop.last %}, {% endif %}{% endfor %} &middot; {% endif %}
+    {% if s.senses %}<b>Senses</b> {{ s.senses }}, passive {{ s.passive }} &middot; {% endif %}
+    {% if m.languages %}<b>Languages</b> {{ m.languages|join(', ') }}{% endif %}
+    {% if m.resist %}&middot; <b>Resist</b> {{ m.resist|map('string')|join(', ')|truncate(80) }}{% endif %}
+    {% if m.immune %}&middot; <b>Immune</b> {{ m.immune|map('string')|join(', ')|truncate(80) }}{% endif %}
+  </p>
+  <div class="peek-body">
+    {% for group, label in [('trait', 'Traits'), ('action', 'Actions'), ('bonus', 'Bonus actions'), ('reaction', 'Reactions'), ('legendary', 'Legendary actions')] %}
+    {% if m[group] %}<h4>{{ label }}</h4>{% for e in m[group] %}<div class="ent"><b class="ent-name">{{ e.name }}</b>{{ e.entries|entries }}</div>{% endfor %}{% endif %}
+    {% endfor %}
+  </div>
+</div>

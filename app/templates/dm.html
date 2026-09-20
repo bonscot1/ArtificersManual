@@ -5,6 +5,15 @@
 <div class="page-head"><h1>DM screen</h1><span class="muted">the party with the numbers, and a line to each player</span></div>
 
 <section class="win">
+  <div class="win-title">Combat <span class="muted small">initiative, enemies, loot - the players see the order from their seats</span></div>
+  <div class="win-body" id="dm-combat-wrap" hx-get="/dm/combat" hx-trigger="every 5s [!document.activeElement.closest('#dm-combat-wrap')], refresh" hx-swap="innerHTML"
+       hx-on::before-request="this._open = [...this.querySelectorAll('details[open]')].map(d => d.id)"
+       hx-on::after-swap="(this._open || []).forEach(id => { const d = document.getElementById(id); if (d) d.open = true })">
+    {% include "partials/dm_combat.html" %}
+  </div>
+</section>
+
+<section class="win">
   <div class="win-title">The party</div>
   <div class="win-body" id="dm-board" hx-get="/dm/board" hx-trigger="every 5s, refresh" hx-swap="innerHTML">
     {% include "partials/dm_board.html" %}

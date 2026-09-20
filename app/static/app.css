@@ -400,3 +400,73 @@ button.cast-opt.big { font-size: 1rem; padding: .5rem .9rem; text-align: left; }
 .glance { display: flex; gap: .6rem; align-items: flex-start; }
 .glance-portrait { width: 48px; height: 48px; object-fit: cover; object-position: top; border-radius: 4px; border: 1px solid var(--red); flex: none; }
 .glance-main { flex: 1; min-width: 0; }
+
+/* ---- combat */
+.combat-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.combat-buttons { margin-left: auto; display: flex; gap: .4rem; }
+.turn-now, .your-turn { color: var(--gold); font-weight: 700; }
+.combat-table tr.current td { background: rgba(211, 169, 85, .08); box-shadow: inset 3px 0 0 var(--gold); }
+.combat-table tr.down td { opacity: .55; }
+.combat-table tr.hidden-row td { font-style: italic; }
+.combat-table input.init { width: 3.6rem; text-align: center; font-weight: 600; }
+.loot-cell details.loot > summary { cursor: pointer; font-size: .85rem; }
+.loot-list { list-style: none; margin: .3rem 0; padding: 0; font-size: .88rem; }
+.loot-list li { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; padding: .1rem 0; }
+select.give { width: auto; font-size: .78rem; padding: .1rem .3rem; }
+.add-enemies { margin-top: .6rem; }
+.tracker-head { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .4rem; }
+.tracker.my-turn { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: var(--radius); }
+.order { list-style: none; margin: 0; padding: 0; }
+.order li { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .3rem .4rem; border-bottom: 1px solid var(--bg-3); }
+.order li.current { background: rgba(211, 169, 85, .1); box-shadow: inset 3px 0 0 var(--gold); }
+.order li.down { opacity: .55; }
+.order .init { width: 2rem; text-align: center; font-weight: 700; color: var(--gold); }
+.order .who { font-weight: 600; }
+.search-body { width: 100%; font-size: .85rem; }
+.search-body > summary { cursor: pointer; color: var(--gold); }
+.hud-combat { grid-column: 1 / -1; }
+.hud-combat:empty { display: none; }
+.combat-strip { display: flex; gap: .8rem; align-items: center; border-top: 1px solid var(--line); padding-top: .5rem; font-size: .9rem; }
+.combat-strip .k { color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
+.combat-strip.my-turn { color: var(--gold); }
+.combat-strip .your-turn { font-weight: 700; letter-spacing: .06em; animation: pulse 1.2s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: .6; } to { opacity: 1; } }
+.turn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
+.turn-head { color: var(--red-2); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin: .2rem 0 .3rem; border-bottom: 1px solid var(--line); }
+details.turn-row { border-bottom: 1px solid var(--bg-3); }
+details.turn-row > summary { cursor: pointer; padding: .2rem 0; font-size: .9rem; }
+.turn-name { font-weight: 600; }
+.kind-attack .turn-name { color: var(--red-2); }
+.kind-spell .turn-name { color: var(--gold); }
+.abilities.ro.compact { grid-template-columns: repeat(6, 1fr); gap: .3rem; }
+.abilities.ro.compact .ability { padding: .2rem; }
+.abilities.ro.compact .mod { font-size: 1rem; }
+.statblock h4 { margin: .5rem 0 .2rem; }
+
+/* ---- loot tables (DM) ---- */
+.trow.loot { grid-template-columns: 2.2fr .7fr .7fr 2.4fr auto; }
+.loot-editor label.chip { cursor: pointer; display: inline-flex; flex-direction: row; position: relative; font-size: .8rem; }
+.loot-editor .chip-box { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+.loot-editor label.chip:has(.chip-box:checked) { border-color: var(--red); color: var(--ink); background: #3a1f1b; }
+.loot-editor .k { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; margin-right: .4rem; }
+.loot-editor .inline { display: flex; flex-wrap: wrap; gap: .6rem; align-items: flex-end; }
+.loot-editor .kinds { flex-direction: column; align-items: flex-start; gap: .3rem; }
+.loot-editor label.check { display: inline-flex; gap: .4rem; white-space: nowrap; }
+.loot-editor label.check .muted { white-space: nowrap; }
+.loot-sample { min-height: 1.6rem; }
+.loot-result ul { margin: 0; padding-left: 1.1rem; }
+.loot-tables .roll-out { margin-top: .2rem; }
+.loot-new { justify-content: space-between; margin-top: .8rem; }
+.roll-loot select { max-width: 16rem; }
+.add-enemies .inline { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.add-enemies label.check { display: inline-flex; flex-direction: row; gap: .3rem; white-space: nowrap; font-size: .8rem; }
+.add-enemies .stack { gap: .4rem; }
+.combat-table tr.down td.loot-cell, .combat-table tr.down td.loot-cell * { opacity: 1; }
+.combat-table tr.down td.loot-cell { background: rgba(255, 255, 255, .03); }
+.combat-table td.loot-cell { min-width: 15rem; }
+.loot-cell details.loot[open] { display: flex; flex-direction: column; gap: .35rem; }
+.loot-cell form.inline { gap: .3rem; }
+.loot-cell form.inline input { font-size: .85rem; }
+#dm-combat { overflow-x: auto; }
+.combat-table { min-width: 62rem; }
+.combat-table td.chips { min-width: 16rem; }

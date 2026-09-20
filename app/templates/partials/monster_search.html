@@ -1,0 +1,6 @@
+{% for m in hits %}
+<button type="button" class="chip" data-key="{{ m.name }}|{{ m.source }}" data-name="{{ m.name }}"
+        onclick="var f = this.closest('form'); f.querySelector('[name=monster]').value = this.dataset.key; f.querySelector('[name=q]').value = this.dataset.name; this.closest('.monster-results').innerHTML = '';">{{ m.name }} <span class="muted">{{ m.source }} &middot; CR {{ m.cr.cr if m.cr is mapping else m.cr }}</span></button>
+{% else %}
+{% if q|length >= 2 %}<span class="muted small">no monster called that in the books loaded</span>{% endif %}
+{% endfor %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ t.name }} - loot table{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ t.name }}</h1><span class="muted">a loot table &middot; <a href="/dm/loot">all tables</a></span></div>
+
+<div class="two-col loot-editor">
+<section class="win">
+  <div class="win-title">The table <span class="muted small">saves as you change it</span></div>
+  <form class="win-body stack" hx-post="/dm/loot/{{ t.id }}" hx-trigger="submit, change" hx-swap="none">
+    <label>Name <input name="name" value="{{ t.name }}" required></label>
+    <label>Notes <input name="notes" value="{{ t.notes }}" placeholder="what this is for"></label>
+    <div>
+      <span class="k">Suits</span> <span class="muted small">tick none for anything</span>
+      <div class="chips">
+        {% for ty in types %}<label class="chip {% if ty in t.types %}on{% endif %}"><input type="checkbox" name="types" value="{{ ty }}" {% if ty in t.types %}checked{% endif %} class="chip-box"> {{ ty }}</label>{% endfor %}
+      </div>
+    </div>
+    <div class="inline">
+      <label>CR from <input name="cr_min" value="{{ '' if t.cr_min is none else t.cr_min }}" placeholder="any" style="width: 4.5rem"></label>
+      <label>to <input name="cr_max" value="{{ '' if t.cr_max is none else t.cr_max }}" placeholder="any" style="width: 4.5rem"></label>
+    </div>
+    <div class="kinds">
+      <label class="check"><input type="radio" name="mode" value="table" {% if t.mode != 'hoard' %}checked{% endif %}> Rows <span class="muted small">roll on the rows below</span></label>
+      <label class="check"><input type="radio" name="mode" value="hoard" {% if t.mode == 'hoard' %}checked{% endif %}> DMG hoard <span class="muted small">coins, gems, art, magic items by CR - ignores the rows</span></label>
+    </div>
+    <label>Draws <input name="draws" value="{{ t.draws }}" style="width: 6rem"> <span class="muted small">how many rows come up: 1, 1d3, 1d2-1</span></label>
+    <div class="kinds">
+      <span class="k">Coins</span>
+      <label class="check"><input type="radio" name="coins_mode" value="none" {% if t.coins_mode == 'none' %}checked{% endif %}> none</label>
+      <label class="check"><input type="radio" name="coins_mode" value="dmg" {% if t.coins_mode == 'dmg' %}checked{% endif %}> by CR <span class="muted small">DMG individual treasure</span></label>
+      <label class="check"><input type="radio" name="coins_mode" value="custom" {% if t.coins_mode == 'custom' %}checked{% endif %}> dice</label>
+    </div>
+    <div class="inline">
+      {% for k in coin_names %}<label class="small">{{ k }} <input name="{{ k }}" value="{{ t.coins.get(k, '') }}" placeholder="2d6" style="width: 4.5rem"></label>{% endfor %}
+    </div>
+  </form>
+</section>
+
+<section class="win">
+  <div class="win-title">Try it</div>
+  <div class="win-body stack">
+    <form class="inline" hx-post="/dm/loot/{{ t.id }}/roll" hx-target="#loot-sample" hx-swap="innerHTML">
+      <label>as CR <input type="text" name="cr" placeholder="1/4" style="width: 4.5rem"></label>
+      <button class="primary">Roll</button>
+    </form>
+    <div id="loot-sample" class="loot-sample"></div>
+    <form method="post" action="/dm/loot/{{ t.id }}/delete" onsubmit="return confirm('Delete this table?')"><button class="link muted">delete this table</button></form>
+  </div>
+</section>
+</div>
+
+<section class="win">
+  <div class="win-title">Rows <span class="muted small">weight is how likely; a row called "nothing" is a blank</span></div>
+  <div class="win-body">
+    {% include "partials/loot_entries.html" %}
+  </div>
+</section>
+{% endblock %}

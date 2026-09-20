@@ -42,6 +42,8 @@ def build_templates(compendium: Compendium) -> Jinja2Templates:
     env.globals["entity_url"] = entity_url
     env.globals["wikidot_url"] = wikidot_url
     env.globals["peek_url"] = peek_url
+    from .loot import coins_text
+    env.globals["coins_text"] = coins_text
     env.filters["linkify"] = lambda text, target="": linkify(text, compendium, target)
     env.globals["theme_choices"] = theme_choices
     env.globals["ABILITIES"] = rules.ABILITIES

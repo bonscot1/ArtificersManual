@@ -1,0 +1,8 @@
+<div class="loot-result">
+  {% if result['items'] or result.coins %}
+  <ul class="loot-list">
+    {% for it in result['items'] %}<li>{{ it.qty }} &times; {{ ('[[' ~ it.name ~ ']]')|linkify }}{% if it.notes %} <span class="muted small">{{ it.notes }}</span>{% endif %}</li>{% endfor %}
+    {% if result.coins %}<li>{{ coins_text(result.coins) }}</li>{% endif %}
+  </ul>
+  {% else %}<span class="muted">nothing this time</span>{% endif %}
+</div>

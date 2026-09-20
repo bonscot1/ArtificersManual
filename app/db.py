@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, create_engine, event
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 
@@ -157,3 +157,59 @@ class Message(Base):
     answer: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Encounter(Base):
+    """One fight: who is in it, whose turn it is."""
+    __tablename__ = "encounters"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), default="Combat")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    round: Mapped[int] = mapped_column(Integer, default=1)
+    turn: Mapped[int] = mapped_column(Integer, default=0)            # index into the initiative order
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Combatant(Base):
+    """A row in the initiative order. PCs point at their character; NPCs carry their own numbers."""
+    __tablename__ = "combatants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    encounter_id: Mapped[int] = mapped_column(Integer, index=True)
+    kind: Mapped[str] = mapped_column(String(3), default="npc")        # pc | npc
+    character_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    monster_key: Mapped[str] = mapped_column(String(160), default="")  # "Goblin|MM"
+    name: Mapped[str] = mapped_column(String(120), default="")
+    initiative: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dex_mod: Mapped[int] = mapped_column(Integer, default=0)           # tie-break
+    hp_max: Mapped[int] = mapped_column(Integer, default=1)
+    hp_current: Mapped[int] = mapped_column(Integer, default=1)
+    ac: Mapped[int] = mapped_column(Integer, default=10)
+    cr: Mapped[float | None] = mapped_column(Float, nullable=True)     # drives the treasure tables
+    conditions: Mapped[list] = mapped_column(JSON, default=list)
+    visible: Mapped[bool] = mapped_column(Boolean, default=True)       # players see it in the order
+    notes: Mapped[str] = mapped_column(Text, default="")
+    loot: Mapped[list] = mapped_column(JSON, default=list)             # [{"name","qty","notes"}]
+    coins: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class LootTable(Base):
+    """What a kind of creature has on it when it falls. The DM rolls on it; rows are weighted."""
+    __tablename__ = "loot_tables"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), default="")
+    notes: Mapped[str] = mapped_column(String(300), default="")
+    types: Mapped[list] = mapped_column(JSON, default=list)            # creature types it suits; [] = anything
+    cr_min: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cr_max: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mode: Mapped[str] = mapped_column(String(10), default="table")     # table | hoard (the DMG hoard for its CR)
+    draws: Mapped[str] = mapped_column(String(20), default="1")        # how many rows come up: "1", "1d3-1"
+    coins_mode: Mapped[str] = mapped_column(String(10), default="none")   # none | dmg (by CR) | custom
+    coins: Mapped[dict] = mapped_column(JSON, default=dict)            # custom: {"cp": "3d6", "gp": "1d4-1"}
+    entries: Mapped[list] = mapped_column(JSON, default=list)          # [{"name","qty","weight","notes"}]
+    builtin: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

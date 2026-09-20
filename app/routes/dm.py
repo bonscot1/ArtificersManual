@@ -26,7 +26,7 @@ def _board(request: Request, session) -> list[dict]:
 
 def _outbox(session, limit: int = 40) -> list[dict]:
     """Recent messages grouped by batch, newest first."""
-    rows = session.scalars(select(Message).where(Message.batch != "dm-edit")
+    rows = session.scalars(select(Message).where(Message.batch != "dm-edit", Message.batch != "combat")
                            .order_by(Message.id.desc()).limit(limit * 4)).all()
     names = {c.id: c.name for c in session.scalars(select(Character)).all()}
     batches: dict[str, dict] = {}
@@ -41,8 +41,10 @@ def _outbox(session, limit: int = 40) -> list[dict]:
 @router.get("")
 async def dm_screen(request: Request):
     _guard(request)
+    from .combat import combat_context
     with request.app.state.db() as session:
-        return page(request, "dm.html", sheets=_board(request, session), outbox=_outbox(session))
+        return page(request, "dm.html", sheets=_board(request, session), outbox=_outbox(session),
+                    **combat_context(request, session))
 
 
 @router.get("/board")

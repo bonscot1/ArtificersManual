@@ -1,0 +1,21 @@
+<div class="table-rows loot-rows" id="loot-entries">
+  {% if t.entries %}<div class="trow loot head"><span>Item</span><span>Qty</span><span>Weight</span><span>Notes</span><span></span></div>{% endif %}
+  {% for e in t.entries %}
+  <form class="trow loot" hx-post="/dm/loot/{{ t.id }}/entries" hx-trigger="change" hx-swap="none">
+    <input type="hidden" name="op" value="update"><input type="hidden" name="idx" value="{{ loop.index0 }}">
+    <input name="name" value="{{ e.name }}" list="item-names">
+    <input name="qty" value="{{ e.qty }}" class="short" title="a number or dice: 1d4">
+    <input type="number" name="weight" value="{{ e.weight }}" class="short" min="0" max="1000">
+    <input name="notes" value="{{ e.notes }}">
+    <button type="button" class="link" hx-post="/dm/loot/{{ t.id }}/entries" hx-vals='{"op": "remove", "idx": {{ loop.index0 }}}' hx-target="#loot-entries" hx-swap="outerHTML" title="remove">x</button>
+  </form>
+  {% endfor %}
+  <form class="trow loot add" hx-post="/dm/loot/{{ t.id }}/entries" hx-target="#loot-entries" hx-swap="outerHTML">
+    <input type="hidden" name="op" value="add">
+    <input name="name" placeholder="Item - book items link to the compendium" required>
+    <input name="qty" placeholder="1" class="short">
+    <input type="number" name="weight" placeholder="1" class="short" min="0" max="1000">
+    <input name="notes" placeholder="notes">
+    <button>Add</button>
+  </form>
+</div>

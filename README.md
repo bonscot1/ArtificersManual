@@ -92,6 +92,46 @@ Removing an item from the equipment list moves it to a **Removed** list undernea
 `scripts/seed_test_party.py` adds three made-up level-2 characters (rogue, life cleric, fiend
 warlock) for trying things out; `--replace` resets them.
 
+## Combat
+
+The DM starts a fight from the **Combat** panel at the top of the DM screen (name it or not).
+Every character joins the order and every player gets a "roll initiative" popup; they type the
+number there or in the "your roll" box on their tracker, and the DM can type it for them. Add
+enemies by name from the bestiary (every non-2024 book: Monster Manual, Volo's, Mordenkainen's,
+Curse of Strahd...) with a count and average or rolled HP - initiative rolls itself, "stat block"
+opens the full entry - or add anyone else with just a name, HP, AC and a challenge rating.
+**Next turn** walks the order, skips downed enemies and ticks the round over; **hide** keeps an
+enemy off the players' trackers.
+
+Enemies get damage and healing, condition chips, notes, and a **loot** panel: what the stat
+block says it carries (a goblin's scimitar and shortbow) plus whatever the DM adds, sets as coins,
+or **rolls** - the loot tables that suit the creature come first in the list. "give to..." hands one
+item to a character; "give everything to..." empties the pockets into one. Anything handed over
+lands in that character's equipment with a "From Goblin 2: Scimitar" popup. Players never help
+themselves: the DM hands loot out.
+
+Players see the fight from their seat: a strip in the HUD (round, whose turn, **YOUR TURN**), a
+**The fight** pane with the order and everyone described in phrases, not numbers, and **On your
+turn** - the actions the sheet allows. Attacks; an off-hand attack when two light weapons are
+carried (or "Handaxe (x2)"); spells ready to cast by casting time; class features, racial traits,
+feats and options sorted by what the rules text says ("as a bonus action", "use your reaction");
+the standard actions from the book (Dash, Disengage, Dodge, Help, Hide, Ready, Search, Use an
+Object, Grapple, Shove); an opportunity attack; and the table's house rule that drinking a
+potion is a bonus action. Each row unfolds to the rules text.
+
+### Loot tables
+
+**Loot tables** (linked from the Combat panel, `/dm/loot`) is the DM's editor. Fourteen built-in
+tables cover the creature types - a beast leaves a hide, meat and teeth and no coins; a
+humanoid's pockets hold the DMG coins for its challenge rating and the odd ration, tinderbox,
+letter or lucky charm; undead leave dust, grave goods and old copper; constructs leave scrap and
+a still-warm core; dragons scales and teeth (the hoard is a separate table, for the lair). Each
+table is weighted rows (item, quantity as a number or dice, weight, notes), a draws formula
+("1d3-1"), which creature types and challenge ratings it suits, and a coin rule: none, the DMG
+individual treasure by CR, or dice per coin. Rows named "nothing..." are blanks. Edit a built-in,
+copy one to start a new one, delete what you don't want; **Restore built-ins** puts back any you
+deleted without touching edited ones. **Roll** on any table with a CR to try it.
+
 ## Who can open what
 
 Every character has its own password. The first person to open a new sheet is asked to set one
@@ -186,10 +226,13 @@ internet while running.
 ```
 app/                FastAPI app
   compendium/       loader (reads the JSON), render (book markup -> HTML), rules (5e arithmetic)
-  routes/           characters.py (party, creation, live-saving sheet), compendium.py (browse)
+  routes/           characters.py (party, creation, live-saving sheet), compendium.py (browse),
+                    dm.py (DM screen, messages), combat.py (the fight), loot.py (loot tables)
+  combat.py         initiative order, turns, what each seat sees; economy.py: the actions panel
+  monsters.py       stat-block numbers and dice; loot.py: DMG treasure; loot_tables.py: the editor's tables
   templates/        Jinja; partials/ are the pieces the sheet swaps live via htmx
   sheet.py          everything derived from scores + level + class + race
-  db.py             SQLite model (one table: characters)
+  db.py             SQLite model (characters, messages, encounters, combatants, loot tables)
 data/5etools/       downloaded rules data (gitignored)
 data/manual.db      your characters (gitignored - back this file up)
 scripts/            fetch_data.py, import_sheet.py

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Loot tables - Artificer's Manual{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Loot tables</h1><span class="muted">what falls off what - the fight screen offers the ones that fit the creature</span></div>
+
+<section class="win">
+  <div class="win-title">Tables <a class="pill" href="/dm">back to the DM screen</a></div>
+  <div class="win-body">
+    <table class="list loot-tables">
+      <thead><tr><th>Table</th><th>Suits</th><th>CR</th><th>Rows</th><th>Coins</th><th>Try it</th><th></th></tr></thead>
+      <tbody>
+      {% for t in tables %}
+      <tr>
+        <td><a href="/dm/loot/{{ t.id }}"><b>{{ t.name }}</b></a>{% if t.builtin %} <span class="muted small">built-in</span>{% endif %}
+          {% if t.notes %}<div class="muted small">{{ t.notes }}</div>{% endif %}</td>
+        <td class="small">{% if t.types %}{{ t.types|join(', ') }}{% else %}<span class="muted">anything</span>{% endif %}</td>
+        <td class="small muted">{% if t.cr_min is not none or t.cr_max is not none %}{{ t.cr_min if t.cr_min is not none else '0' }} - {{ t.cr_max if t.cr_max is not none else '30' }}{% else %}any{% endif %}</td>
+        <td class="small">{% if t.mode == 'hoard' %}<span class="muted">DMG hoard</span>{% else %}{{ t.entries|length }} &middot; draws {{ t.draws }}{% endif %}</td>
+        <td class="small muted">{{ {'none': '-', 'dmg': 'by CR', 'custom': 'custom'}[t.coins_mode] }}</td>
+        <td>
+          <form class="inline" hx-post="/dm/loot/{{ t.id }}/roll" hx-target="next .roll-out" hx-swap="innerHTML">
+            <input type="text" name="cr" placeholder="CR" style="width: 3.4rem" title="challenge rating, for the coin tables">
+            <button class="ghost small">Roll</button>
+          </form>
+          <div class="roll-out small"></div>
+        </td>
+        <td><button class="link muted" hx-post="/dm/loot/{{ t.id }}/delete" hx-confirm="Delete {{ t.name }}?" hx-swap="none">delete</button></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="inline loot-new">
+      <form class="inline" method="post" action="/dm/loot">
+        <input name="name" placeholder="New table - a name" style="width: 14rem" required>
+        <select name="copy"><option value="">start empty</option>{% for t in tables %}<option value="{{ t.id }}">copy {{ t.name }}</option>{% endfor %}</select>
+        <button class="primary">Create</button>
+      </form>
+      <form method="post" action="/dm/loot/restore"><button class="ghost" title="puts back any built-in table you deleted; edited ones are left alone">Restore built-ins</button></form>
+    </div>
+  </div>
+</section>
+{% endblock %}

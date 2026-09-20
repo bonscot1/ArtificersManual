@@ -1,0 +1,26 @@
+{% if v %}
+<div class="tracker {% if v.my_turn %}my-turn{% endif %}">
+  <div class="tracker-head">
+    <span><b>{{ v.encounter.name }}</b> &middot; round {{ v.encounter.round }}</span>
+    {% if v.my_turn %}<span class="your-turn">Your turn</span>{% elif v.current %}<span class="muted">{{ v.current.name }}'s turn</span>{% endif %}
+  </div>
+  <ol class="order">
+    {% for r in v.rows %}
+    <li class="{% if r.current %}current{% endif %} {% if r.down %}down{% endif %}">
+      <span class="init">{{ r.initiative if r.initiative is not none else '?' }}</span>
+      <span class="who">{{ r.name }}{% if r.mine %} <span class="muted small">(you)</span>{% endif %}</span>
+      {% if not r.mine %}
+      <span class="seen small"><span class="seen-dot" style="background: {{ r.seen.colour }}"></span><span style="color: {{ r.seen.colour }}">{{ r.seen.health }}</span>{% for look in r.seen.looks %}<span class="seen-look">{{ look }}</span>{% endfor %}</span>
+      {% endif %}
+      {% if is_dm and r.kind == 'npc' %}<span class="muted small">{{ r.hp_current }}/{{ r.hp_max }} &middot; AC {{ r.ac }}</span>{% endif %}
+      {% if r.mine and r.initiative is none %}
+      <form class="inline" hx-post="/c/{{ me }}/initiative" hx-target="closest .tracker" hx-swap="outerHTML">
+        <input type="number" name="initiative" placeholder="your roll" style="width: 6rem" min="-20" max="60" required>
+        <button class="primary small">Set</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endif %}

@@ -104,6 +104,7 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
     for r in castable:
         ready_levels.setdefault(r["level"], []).append(r)
     theme = theme_key(ch, cls)
+    from .economy import combat_options
     companions = []
     for i, comp in enumerate(ch.companions or []):
         hp_max = max(0, int(comp.get("hp_max", 0) or 0))
@@ -121,7 +122,7 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
                           attacks=[a for a in (ch.attacks or [])           # spells listed as attacks aren't weapons
                                    if re.sub(r"[^a-z0-9]", "", str(a.get("name", "")).split(" (")[0].lower())
                                    not in getattr(c, "spell_norms", set())])
-    return {
+    built = {
         "seen": seen,
         "companions": companions,
         "theme": theme,
@@ -169,6 +170,8 @@ def build_sheet(ch: Character, c: Compendium) -> dict:
         "condition_names": [x["name"] for x in sorted(c.conditions.values(), key=lambda x: x["name"])],
         "currency": {k: int((ch.currency or {}).get(k, 0) or 0) for k in ("cp", "sp", "ep", "gp", "pp")},
     }
+    built["turn"] = combat_options(built, c)
+    return built
 
 
 def _spellcasting(ch: Character, cls: dict | None, sub: dict | None, mods: dict, prof: int) -> dict | None:

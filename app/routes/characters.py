@@ -251,7 +251,10 @@ async def play(request: Request, cid: int):
         comp = _comp(request)
         others = [build_sheet(o, comp) for o in session.scalars(select(Character).order_by(Character.name)).all()
                   if o.id != cid]
+        from .. import combat as C
+        enc = C.active_encounter(session)
         return page(request, "play.html", sheet=build_sheet(ch, comp), sheets=others, me=cid,
+                    v=C.view(session, enc, me=cid, dm=request.state.role == "dm") if enc else None,
                     readonly=True, view="play")
 
 
@@ -922,7 +925,17 @@ async def inbox_reply(request: Request, cid: int, mid: int):
         if not m or m.character_id != cid:
             raise HTTPException(404, "No such message")
         if m.status == "pending":
-            if m.kind == "choice":
+            if m.kind == "initiative":
+                val = str(form.get("answer", "")).strip()
+                if not val.lstrip("-").isdigit():
+                    return page(request, "partials/inbox_modal.html", char=ch, m=m, more=0, error="Type the number you rolled.")
+                from .. import combat as C
+                enc = C.active_encounter(session)
+                for row in (C.combatants(session, enc) if enc else []):
+                    if row.character_id == cid:
+                        row.initiative = _clamp(val, -20, 60, 0)
+                m.answer = val
+            elif m.kind == "choice":
                 pick = str(form.get("answer", ""))
                 if pick not in (m.options or []):
                     return page(request, "partials/inbox_modal.html", char=ch, m=m, more=0, error="Pick one of the options.")

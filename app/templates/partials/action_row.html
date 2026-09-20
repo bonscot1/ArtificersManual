@@ -1,0 +1,10 @@
+<details class="turn-row kind-{{ e.kind }}">
+  <summary><span class="turn-name">{{ e.name }}</span>{% if e.detail %} <span class="muted small">{{ e.detail }}</span>{% endif %}</summary>
+  <div class="feat-body">
+    {% if e.entries %}{{ e.entries|entries }}
+    {% elif e.peek %}<div hx-get="{{ peek_url(e.peek[0], e.peek[1]) }}" hx-trigger="intersect once" hx-swap="innerHTML"><span class="muted small">loading...</span></div>
+    {% elif e.kind == 'offhand' %}<p class="small">Two-weapon fighting: when you take the Attack action with a light melee weapon in one hand, you can use a bonus action to attack with a different light melee weapon in the other. Don't add your ability modifier to the damage unless it's negative.</p>
+    {% elif e.kind == 'attack' %}<p class="small">One of your attacks with the Attack action.</p>
+    {% else %}<p class="small muted">{{ e.detail }}</p>{% endif %}
+  </div>
+</details>

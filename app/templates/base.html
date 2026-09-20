@@ -41,6 +41,11 @@
       clearTimeout(timer);
       timer = setTimeout(function () { toast.hidden = true; }, 1400);
     });
+    // Chrome jumps the page when the focused button is swapped away mid-click; let go of it first.
+    document.body.addEventListener("htmx:beforeSwap", function (e) {
+      var a = document.activeElement;
+      if (a && a !== document.body && e.detail.target && e.detail.target.contains(a)) a.blur();
+    });
     document.body.addEventListener("htmx:responseError", function (e) {
       toast.textContent = "Not saved (" + e.detail.xhr.status + ")";
       toast.hidden = false;

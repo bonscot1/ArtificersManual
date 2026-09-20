@@ -1,0 +1,7 @@
+{% if v %}
+<div class="combat-strip {% if v.my_turn %}my-turn{% endif %}">
+  <span class="k">{{ v.encounter.name }}</span>
+  <span>round {{ v.encounter.round }}</span>
+  {% if v.my_turn %}<span class="your-turn">YOUR TURN</span>{% elif v.current %}<span>&middot; {{ v.current.name }}'s turn</span>{% endif %}
+</div>
+{% endif %}

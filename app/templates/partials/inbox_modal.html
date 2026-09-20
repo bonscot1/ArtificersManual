@@ -1,10 +1,15 @@
 <div class="modal-backdrop">
   <div class="modal" data-mid="{{ m.id }}-{{ m.text|length }}">
-    <div class="modal-head">{{ 'Your sheet changed' if m.batch == 'dm-edit' else 'A message from the DM' }}{% if more %} <span class="muted small">{{ more }} more waiting</span>{% endif %}</div>
+    <div class="modal-head">{{ 'Your sheet changed' if m.batch == 'dm-edit' else ('Roll initiative' if m.kind == 'initiative' else 'A message from the DM') }}{% if more %} <span class="muted small">{{ more }} more waiting</span>{% endif %}</div>
     <div class="modal-text">{{ m.text|linkify('#peek-' ~ m.id) }}</div>
     <div class="peek" id="peek-{{ m.id }}"></div>
     {% if error %}<p class="err">{{ error }}</p>{% endif %}
-    {% if m.kind == 'choice' %}
+    {% if m.kind == 'initiative' %}
+    <form class="inline" hx-post="/c/{{ char.id }}/inbox/{{ m.id }}" hx-target="#inbox" hx-swap="innerHTML">
+      <input type="number" name="answer" min="-20" max="60" placeholder="d20 + {{ '%+d'|format(((char.score_dex - 10) // 2)) }}" autofocus style="width: 8rem">
+      <button class="primary">That's my initiative</button>
+    </form>
+    {% elif m.kind == 'choice' %}
     <div class="modal-options">
       {% for o in m.options %}
       <button class="cast-opt big" hx-post="/c/{{ char.id }}/inbox/{{ m.id }}" hx-vals='{"answer": {{ o|tojson }}}' hx-target="#inbox" hx-swap="innerHTML">{{ o }}</button>

@@ -17,7 +17,7 @@ from .render import split_pipe
 KIND_PATHS = {
     "spell": "spells", "item": "items", "condition": "conditions", "race": "races",
     "class": "classes", "background": "backgrounds", "feat": "feats",
-    "optionalfeature": "optional-features",
+    "optionalfeature": "optional-features", "monster": "monsters", "action": "actions",
 }
 
 # the 2024 rules: never loaded, even for items
@@ -286,6 +286,9 @@ class Compendium:
         self.optionalfeatures: dict[str, dict] = {}
         self.items: dict[str, dict] = {}
         self.conditions: dict[str, dict] = {}
+        self.monsters: dict[str, dict] = {}
+        self.actions: dict[str, dict] = {}
+        self.loot: dict = {}
         self._by_name: dict[str, dict[str, dict[str, str]]] = {}
         self._merged_race_cache: dict[tuple[str, str], dict] = {}
         self.load()
@@ -325,13 +328,16 @@ class Compendium:
                 if self._enabled(e):
                     self._register(kind, e, store)
         self._load_items()
+        self._load_monsters()
+        self._load_actions()
+        self.loot = self._read("loot.json") or {}
         self._drop_superseded()
 
     # ---------------------------------------------------------------- one printing per name
     def _superseded(self, entity: dict, *stores: dict) -> bool:
         """Replaced by a later printing that is also enabled (Volo's Goliath -> Multiverse Goliath)."""
         for name, src in reprint_targets(entity):
-            if src in SOURCES_2024 or src not in self.sources or src == entity.get("source"):
+            if src in SOURCES_2024 or src == entity.get("source"):
                 continue
             if any(key(name, src) in st for st in stores):
                 return True
@@ -347,7 +353,8 @@ class Compendium:
         """Keep the version the books themselves call current - what wikidot shows first."""
         for kind, store in (("race", self.races), ("class", self.classes), ("background", self.backgrounds),
                             ("feat", self.feats), ("optionalfeature", self.optionalfeatures),
-                            ("spell", self.spells), ("item", self.items)):
+                            ("spell", self.spells), ("item", self.items), ("monster", self.monsters),
+                            ("action", self.actions)):
             for k in [k for k, e in store.items() if self._superseded(e, store)]:
                 self._unregister(kind, k, store)
         for rk in [rk for rk in self.subraces if rk not in self.races]:
@@ -434,6 +441,25 @@ class Compendium:
         """Loot comes from any book the DM likes, so items ignore `sources` (bar the 2024 rules)."""
         return it.get("source") not in SOURCES_2024 and it.get("edition") != "one"
 
+    def _load_monsters(self) -> None:
+        """Every bestiary file present (the DM's side, so `sources` doesn't apply), bar the 2024 books.
+        Copies resolve across files: Curse of Strahd's commoners are Monster Manual commoners."""
+        bdir = self.data_dir / "bestiary"
+        if not bdir.exists():
+            return
+        raw = []
+        for path in sorted(bdir.glob("bestiary-*.json")):
+            raw += json.loads(path.read_text(encoding="utf-8")).get("monster", [])
+        for m in resolve_copies(raw, ("name", "source")):
+            if m.get("source") not in SOURCES_2024 and m.get("edition") != "one" and not m.get("_isCopy"):
+                self._register("monster", m, self.monsters)
+
+    def _load_actions(self) -> None:
+        data = self._read("actions.json") or {}
+        for a in data.get("action", []):
+            if a.get("source") not in SOURCES_2024:
+                self._register("action", a, self.actions)
+
     def _load_items(self) -> None:
         base = self._read("items-base.json") or {}
         for it in base.get("baseitem", []):
@@ -452,7 +478,16 @@ class Compendium:
             "spell": self.spells, "item": self.items, "condition": self.conditions,
             "race": self.races, "class": self.classes, "background": self.backgrounds,
             "feat": self.feats, "optionalfeature": self.optionalfeatures,
+            "monster": self.monsters, "action": self.actions,
         }[kind]
+
+    def search_monsters(self, q: str, limit: int = 30) -> list[dict]:
+        ql = q.strip().lower()
+        if len(ql) < 2:
+            return []
+        hits = [m for m in self.monsters.values() if ql in m["name"].lower()]
+        hits.sort(key=lambda m: (not m["name"].lower().startswith(ql), m["name"], m["source"]))
+        return hits[:limit]
 
     def find(self, kind: str, name: str, source: str | None = None) -> dict | None:
         """By name (case-insensitive); exact source first, then any enabled source."""

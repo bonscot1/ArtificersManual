@@ -8,3 +8,4 @@ settings.json
 .claude/
 data/secret.key
 data/portraits/
+scripts/preview.py

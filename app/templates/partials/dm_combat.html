@@ -1,0 +1,133 @@
+<div id="dm-combat">
+{% if not enc %}
+  <form class="inline" hx-post="/dm/combat/start" hx-target="#dm-combat" hx-swap="outerHTML">
+    <input name="name" placeholder="Name the fight (optional)" style="width: 16rem">
+    <button class="primary">Start combat</button>
+    <span class="muted small">every player gets a "roll initiative" popup; add the enemies below</span>
+    <a class="pill" href="/dm/loot">loot tables</a>
+  </form>
+{% else %}
+  <div class="combat-head">
+    <span><b>{{ enc.name }}</b> &middot; round <b>{{ enc.round }}</b>{% if v.current %} &middot; <span class="turn-now">{{ v.current.name }}</span>'s turn{% endif %}</span>
+    {% if v.waiting %}<span class="muted small">waiting on initiative: {{ v.waiting|join(', ') }}</span>{% endif %}
+    <span class="combat-buttons">
+      <button hx-post="/dm/combat/turn" hx-vals='{"dir": "prev"}' hx-target="#dm-combat" hx-swap="outerHTML" class="ghost">&larr; back</button>
+      <button hx-post="/dm/combat/turn" hx-target="#dm-combat" hx-swap="outerHTML" class="primary">Next turn &rarr;</button>
+      <button hx-post="/dm/combat/end" hx-target="#dm-combat" hx-swap="outerHTML" hx-confirm="End the fight?" class="danger">End combat</button>
+      <a class="pill" href="/dm/loot">loot tables</a>
+    </span>
+  </div>
+  <table class="list dm-table combat-table">
+    <thead><tr><th>Init</th><th>Who</th><th>HP</th><th>AC</th><th>Conditions</th><th>Loot</th><th></th></tr></thead>
+    <tbody>
+    {% for r in v.rows %}
+    <tr class="{% if r.current %}current{% endif %} {% if r.down %}down{% endif %} {% if not r.visible %}hidden-row{% endif %}">
+      <td>
+        <form class="inline" hx-post="/dm/combat/{{ r.id }}" hx-trigger="change" hx-target="#dm-combat" hx-swap="outerHTML">
+          <input type="hidden" name="op" value="initiative">
+          <input type="number" name="initiative" value="{{ r.initiative if r.initiative is not none else '' }}" class="short init" placeholder="?">
+        </form>
+      </td>
+      <td>
+        {% if r.kind == 'pc' %}<a href="/c/{{ r.character_id }}"><b>{{ r.name }}</b></a> <span class="muted small">PC</span>
+        {% else %}
+        <form class="inline" hx-post="/dm/combat/{{ r.id }}" hx-trigger="change" hx-target="#dm-combat" hx-swap="outerHTML">
+          <input type="hidden" name="op" value="name">
+          <input name="name" value="{{ r.name }}" style="width: 10rem">
+          <input name="notes" value="{{ r.notes }}" placeholder="notes" style="width: 10rem">
+        </form>
+        {% if r.monster_key %}<button type="button" class="link small" hx-get="/compendium/peek/monster/{{ r.monster_key|urlencode }}" hx-target="#peek-{{ r.id }}" hx-swap="innerHTML">stat block</button>{% endif %}
+        <button type="button" class="link small muted" hx-post="/dm/combat/{{ r.id }}" hx-vals='{"op": "visible"}' hx-target="#dm-combat" hx-swap="outerHTML">{{ 'hidden from players' if not r.visible else 'hide' }}</button>
+        <div class="peek" id="peek-{{ r.id }}"></div>
+        {% endif %}
+      </td>
+      <td class="hp-cell">
+        <b style="color: {{ r.seen.colour }}">{{ r.hp_current }}</b><span class="muted">/{{ r.hp_max }}</span>
+        <div class="muted small">{{ r.seen.health }}</div>
+        {% if r.kind == 'npc' %}
+        <form class="hp-actions" hx-post="/dm/combat/{{ r.id }}" hx-target="#dm-combat" hx-swap="outerHTML">
+          <input type="number" name="amount" min="0" max="999" placeholder="0" style="width: 3.6rem">
+          <button name="op" value="damage" class="danger">Dmg</button>
+          <button name="op" value="heal" class="good">Heal</button>
+        </form>
+        {% endif %}
+      </td>
+      <td>{{ r.ac }}</td>
+      <td class="chips">
+        {% for name in condition_names %}
+        {% if r.kind == 'npc' %}
+        <button class="chip {% if name in r.conditions %}on{% endif %}" hx-post="/dm/combat/{{ r.id }}" hx-vals='{"op": "condition", "name": "{{ name }}"}' hx-target="#dm-combat" hx-swap="outerHTML">{{ name }}</button>
+        {% else %}
+        <button class="chip {% if name in r.conditions %}on{% endif %}" hx-post="/c/{{ r.character_id }}/conditions" hx-vals='{"name": "{{ name }}"}' hx-swap="none" hx-on::after-request="htmx.trigger('#dm-combat-wrap', 'refresh')">{{ name }}</button>
+        {% endif %}
+        {% endfor %}
+      </td>
+      <td class="loot-cell">
+        {% if r.kind == 'npc' %}
+        <details class="loot" id="loot-{{ r.id }}" {% if r.down %}open{% endif %}>
+          <summary>{{ r.loot|length }} item{{ '' if r.loot|length == 1 else 's' }}{% if r.coins %} &middot; {{ coins_text(r.coins) }}{% endif %}</summary>
+          <ul class="loot-list">
+            {% for it in r.loot %}
+            <li>{{ it.qty }} &times; {{ ('[[' ~ it.name ~ ']]')|linkify('#peek-loot-' ~ r.id) }}{% if it.notes %} <span class="muted small">{{ it.notes }}</span>{% endif %}
+              <select class="give" hx-post="/dm/combat/{{ r.id }}/loot" hx-vals='{"op": "give", "idx": {{ loop.index0 }}}' hx-include="this" hx-target="#dm-combat" hx-swap="outerHTML" name="to">
+                <option value="">give to...</option>{% for c in chars %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+              </select>
+              <button class="link muted" hx-post="/dm/combat/{{ r.id }}/loot" hx-vals='{"op": "remove", "idx": {{ loop.index0 }}}' hx-target="#dm-combat" hx-swap="outerHTML">x</button>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="peek" id="peek-loot-{{ r.id }}"></div>
+          <form class="inline" hx-post="/dm/combat/{{ r.id }}/loot" hx-target="#dm-combat" hx-swap="outerHTML">
+            <input type="hidden" name="op" value="add">
+            <input name="qty" placeholder="1" style="width: 3rem"><input name="name" placeholder="item" style="width: 9rem"><input name="notes" placeholder="notes" style="width: 7rem">
+            <button class="ghost">Add</button>
+          </form>
+          <form class="inline" hx-post="/dm/combat/{{ r.id }}/loot" hx-target="#dm-combat" hx-swap="outerHTML">
+            <input type="hidden" name="op" value="coins">
+            {% for k in ['cp', 'sp', 'ep', 'gp', 'pp'] %}<input type="number" name="{{ k }}" value="{{ r.coins.get(k, '') }}" placeholder="{{ k }}" style="width: 3.4rem" min="0">{% endfor %}
+            <button class="ghost">Set coins</button>
+          </form>
+          <form class="inline roll-loot" hx-post="/dm/combat/{{ r.id }}/loot" hx-target="#dm-combat" hx-swap="outerHTML">
+            <input type="hidden" name="op" value="roll">
+            <select name="table" title="loot tables that suit it come first">
+              {% for sug in r.tables %}<option value="{{ sug.table.id }}">{{ sug.table.name }}{% if sug.rank == 2 %} - suits it{% elif sug.rank == 0 %} - not really{% endif %}</option>{% endfor %}
+            </select>
+            <button class="ghost" title="roll on that table and add the result here">Roll</button>
+          </form>
+          {% if r.loot or r.coins %}
+          <span class="inline">
+            <select class="give" hx-post="/dm/combat/{{ r.id }}/loot" hx-vals='{"op": "give", "idx": -1}' hx-include="this" hx-target="#dm-combat" hx-swap="outerHTML" name="to">
+              <option value="">give everything to...</option>{% for c in chars %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+            </select>
+          </span>
+          {% endif %}
+          {% if r.down %}<div class="muted small">down - roll what it had on it, then hand it out</div>{% endif %}
+        </details>
+        {% endif %}
+      </td>
+      <td>{% if r.kind == 'npc' %}<button class="link muted" hx-post="/dm/combat/{{ r.id }}" hx-vals='{"op": "remove"}' hx-target="#dm-combat" hx-swap="outerHTML" hx-confirm="Remove {{ r.name }}?">remove</button>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="two-col add-enemies">
+    <form class="stack" hx-post="/dm/combat/add" hx-target="#dm-combat" hx-swap="outerHTML">
+      <div class="inline">
+        <input type="search" name="q" placeholder="Add a monster - goblin, wolf, Strahd..." autocomplete="off" style="width: 16rem"
+               hx-get="/dm/combat/monsters" hx-trigger="input changed delay:200ms" hx-target="next .monster-results" hx-swap="innerHTML">
+        <input type="hidden" name="monster" value="">
+        <input type="number" name="count" value="1" min="1" max="20" style="width: 4rem" title="how many">
+        <label class="check small"><input type="radio" name="hp" value="average" checked> average HP</label>
+        <label class="check small"><input type="radio" name="hp" value="rolled"> roll HP</label>
+        <button class="primary">Add</button>
+      </div>
+      <div class="monster-results chips"></div>
+    </form>
+    <form class="inline" hx-post="/dm/combat/add" hx-target="#dm-combat" hx-swap="outerHTML">
+      <input name="name" placeholder="Or anyone else: a name" style="width: 10rem" required>
+      <input type="number" name="hp_max" placeholder="HP" style="width: 4rem"><input type="number" name="ac" placeholder="AC" style="width: 4rem"><input type="number" name="initiative" placeholder="init" style="width: 4rem"><input name="cr" placeholder="CR" style="width: 3.6rem" title="challenge rating - picks the treasure tables">
+      <button class="ghost">Add</button>
+    </form>
+  </div>
+{% endif %}
+</div>

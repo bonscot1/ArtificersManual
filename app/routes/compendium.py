@@ -160,9 +160,14 @@ async def condition(request: Request, key: str):
 @router.get("/peek/{kind}/{key}")
 async def peek(request: Request, kind: str, key: str):
     """A compact entry to drop into a popup or under an inventory row."""
-    if kind not in ("item", "spell", "condition", "feat", "optionalfeature", "race", "class", "background"):
+    if kind not in ("item", "spell", "condition", "feat", "optionalfeature", "race", "class", "background", "monster", "action"):
         raise HTTPException(404, "Nothing to show")
     e = _get(request, kind, key)
+    if kind == "monster":
+        if request.state.role != "dm":
+            raise HTTPException(403, "The DM's side of the screen")
+        from .. import monsters as mon
+        return page(request, "partials/monster_block.html", m=e, s=mon.summary(e))
     return page(request, "partials/peek.html", kind=kind, e=e)
 
 

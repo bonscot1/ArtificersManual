@@ -1,0 +1,25 @@
+{% set t = sheet.turn %}
+<section class="win" id="actions-panel">
+  <div class="win-title">On your turn <span class="muted small">one action, one bonus action, one reaction per round, and your movement</span></div>
+  <div class="win-body turn-grid">
+    <div class="turn-col">
+      <div class="turn-head">Action</div>
+      {% for e in t.action %}{% include "partials/action_row.html" %}{% endfor %}
+      <details class="feat muted"><summary>Standard actions</summary>
+        {% for e in t.standard %}{% include "partials/action_row.html" %}{% endfor %}
+      </details>
+    </div>
+    <div class="turn-col">
+      <div class="turn-head">Bonus action</div>
+      {% for e in t.bonus %}{% include "partials/action_row.html" %}{% else %}<p class="muted small">Nothing special - a bonus action needs a feature or spell that grants one.</p>{% endfor %}
+    </div>
+    <div class="turn-col">
+      <div class="turn-head">Reaction</div>
+      {% for e in t.reaction %}{% include "partials/action_row.html" %}{% endfor %}
+      {% if t.free %}
+      <div class="turn-head">On a hit / free</div>
+      {% for e in t.free %}{% include "partials/action_row.html" %}{% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>

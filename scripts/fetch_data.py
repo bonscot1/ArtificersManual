@@ -27,6 +27,9 @@ CLASSES = [
     "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard",
 ]
 
+# Monsters: the Monster Manual, the table's expansion books, and the campaign (Curse of Strahd).
+BESTIARIES = ["mm", "mpmm", "vgm", "bgg", "tce", "ttp", "xge", "phb", "dmg", "cos"]
+
 # Races/backgrounds/feats/items are single files covering every book, so the
 # base set already contains the expansion entries; the app filters by source.
 BASE_FILES = [
@@ -44,6 +47,9 @@ BASE_FILES = [
     "spells/index.json",
     "spells/spells-phb.json",
     "generated/gendata-spell-source-lookup.json",   # spell -> which classes can cast it
+    "loot.json",                                   # the DMG treasure tables
+    "bestiary/index.json",
+    *[f"bestiary/bestiary-{b}.json" for b in BESTIARIES],
     *[f"class/class-{c}.json" for c in CLASSES],
 ]
 
@@ -75,6 +81,16 @@ def list_spell_files() -> list[str]:
     )
 
 
+def list_bestiary_files() -> list[str]:
+    req = urllib.request.Request(API + "bestiary", headers={"User-Agent": "artificers-manual/0.1"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        listing = json.load(resp)
+    return sorted(
+        "bestiary/" + e["name"] for e in listing
+        if e["name"].startswith("bestiary-") and e["name"].endswith(".json")
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--all", action="store_true", help="also fetch every expansion's spell file")
@@ -84,6 +100,7 @@ def main() -> int:
     files = list(BASE_FILES)
     if args.all:
         files += [f for f in list_spell_files() if f not in files]
+        files += [f for f in list_bestiary_files() if f not in files]
 
     DEST.mkdir(parents=True, exist_ok=True)
     print(f"-> {DEST}")

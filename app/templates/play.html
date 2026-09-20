@@ -37,12 +37,25 @@
 
 <div class="panes" id="panes">
 
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="0">
+    <section class="win">
+      <div class="win-title">The fight <span class="muted small">initiative order as you see it</span></div>
+      <div class="win-body" hx-get="/combat/tracker?me={{ ch.id }}" hx-trigger="every 3s" hx-swap="innerHTML">
+        {% include "partials/combat_tracker.html" %}
+      </div>
+    </section>
+  </section>
+
   <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="1">
+    {% include "partials/actions_panel.html" %}
+  </section>
+
+  <section class="pane" data-modes="combat all" data-tab="actions" data-combat-order="2">
     {% include "partials/attacks.html" %}
   </section>
 
   {% if sheet.spellcasting %}
-  <section class="pane" data-modes="combat rp all" data-tab="spells" data-combat-order="2" data-rp-order="4">
+  <section class="pane" data-modes="combat rp all" data-tab="spells" data-combat-order="3" data-rp-order="4">
     <section class="win">
       <div class="win-title">Spells <span class="muted small">Cast spends the slot</span></div>
       <div class="win-body">{% include "partials/spells_play.html" %}</div>

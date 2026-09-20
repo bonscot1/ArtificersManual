@@ -34,6 +34,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.db = make_session_factory(engine)
     app.state.templates = build_templates(compendium)
+    from . import loot_tables
+    with app.state.db() as session:
+        if loot_tables.seed_if_empty(session):
+            session.commit()
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     @app.middleware("http")
@@ -100,10 +104,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         resp.delete_cookie(auth.COOKIE)
         return resp
 
-    from .routes import characters, compendium as compendium_routes, dm
+    from .routes import characters, combat, compendium as compendium_routes, dm, loot
     app.include_router(characters.router)
     app.include_router(compendium_routes.router)
     app.include_router(dm.router)
+    app.include_router(combat.router)
+    app.include_router(loot.router)
     return app
 
 
